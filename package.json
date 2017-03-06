@@ -2,6 +2,14 @@
   "name": "cookout-api",
   "version": "0.0.1",
   "dependencies": {
-    "express": "^4.15.2"
+    "bcrypt": "^1.0.2",
+    "body-parser": "^1.17.1",
+    "express": "^4.15.2",
+    "jsonwebtoken": "^7.3.0",
+    "mongoose": "^4.8.6",
+    "morgan": "^1.8.1",
+    "passport": "^0.3.2",
+    "passport-jwt": "^2.2.1",
+    "path": "^0.12.7"
   }
 }
