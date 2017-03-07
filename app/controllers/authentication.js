@@ -52,7 +52,7 @@ exports.register = function (req, res, next) {
     if (!password) {
         return res.status(422).send({ error: 'You must enter a password.' });
     }
-    console.log("iii");
+
     User.findOne({ email }, (err, existingUser) => {
 
         if (err) { return next(err); }
@@ -66,7 +66,7 @@ exports.register = function (req, res, next) {
         const user = new User({
             email,
             password,
-            profile: { firstName, lastName }
+            profile: { firstName, lastName },
         });
 
         user.save((err, user) => {
@@ -85,7 +85,7 @@ exports.register = function (req, res, next) {
             });
         });
     });
-    console.log("iii");
+
 };
 
 //= =======================================

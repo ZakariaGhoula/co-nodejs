@@ -7,6 +7,7 @@
     "body-parser": "^1.17.1",
     "crypto": "0.0.3",
     "express": "^4.15.2",
+    "fs": "0.0.1-security",
     "jsonwebtoken": "^7.3.0",
     "mongoose": "^4.8.6",
     "morgan": "^1.8.1",
@@ -14,6 +15,7 @@
     "passport-jwt": "^2.2.1",
     "passport-local": "^1.0.0",
     "path": "^0.12.7",
+    "sharp": "^0.17.2",
     "socket.io": "^1.7.3"
   }
 }

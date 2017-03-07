@@ -13,15 +13,38 @@ const localOptions = {
 
 // Setting up local login strategy
 const localLogin = new LocalStrategy(localOptions, (email, password, done) => {
-    User.findOne({ email }, (err, user) => {
-        if (err) { return done(err); }
-        if (!user) { return done(null, false, { error: 'Your login details could not be verified. Please try again.' }); }
+    User.findOne({email}, (err, user) => {
+        if (err) {
+            return done(err);
+        }
+        if (!user) {
+            return done(null, false, {error: 'Your login details could not be verified. Please try again.'});
+        }
 
         user.comparePassword(password, (err, isMatch) => {
-            if (err) { return done(err); }
-            if (!isMatch) { return done(null, false, { error: 'Your login details could not be verified. Please try again.' }); }
+            if (err) {
+                return done(err);
+            }
+            if (!isMatch) {
+                return done(null, false, {error: 'Your login details could not be verified. Please try again.'});
+            }
 
-            return done(null, user);
+
+            User.update(
+                {_id: user._id},
+                {
+                    $set: {
+                        activated: true
+
+                    }
+                }, function (err2, data) {
+                    if (err2) {
+                        return res.status(500).json({error: 'Something went wrong, please try later.'});
+                        // req.session.historyData.message = 'Something went wrong, please try later.'
+                    }
+
+                    return done(null, user);
+                });
         });
     });
 });
@@ -39,7 +62,9 @@ const jwtOptions = {
 // Setting up JWT login strategy
 const jwtLogin = new JwtStrategy(jwtOptions, (payload, done) => {
     User.findById(payload._id, (err, user) => {
-        if (err) { return done(err, false); }
+        if (err) {
+            return done(err, false);
+        }
 
         if (user) {
             done(null, user);
