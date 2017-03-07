@@ -2,6 +2,7 @@ const AuthenticationController = require('./controllers/authentication');
 const UserController = require('./controllers/user');
 const SeasonalProductController = require('./controllers/seasonal_product');
 const TagController = require('./controllers/tag');
+const NetworkController = require('./controllers/network');
 const express = require('express');
 const passport = require('passport');
 const ROLE_USER = require('./constants').ROLE_USER;
@@ -19,6 +20,7 @@ module.exports = function (app) {
     const apiRoutes = express.Router(),
         authRoutes = express.Router(),
         userRoutes = express.Router(),
+        networkRoutes = express.Router(),
         seasonalProductRoutes = express.Router(),
         tagRoutes = express.Router();
 
@@ -72,10 +74,20 @@ module.exports = function (app) {
     // Seasonal product Routes
     //= ========================
 
+    apiRoutes.use('/network', networkRoutes);
+
+    networkRoutes.get('/hosts/:userId', requireAuth, NetworkController.getAllNetworkHost);
+
+     //= ========================
+    // Seasonal product Routes
+    //= ========================
+
     apiRoutes.use('/seasonal-products', seasonalProductRoutes);
 
     seasonalProductRoutes.get('/:lng', requireAuth, SeasonalProductController.getAllSeasonalProducts);
     seasonalProductRoutes.get('/:lng/:season', requireAuth, SeasonalProductController.getSeasonalProducts);
+
+
     // = ========================
     // Tag Routes
     //= ========================

@@ -2,6 +2,7 @@ node_modules/
 node_modules/*
 <<<<<<< Updated upstream
 public/
+data_json/
 =======
 
 .idea/workspace.xml

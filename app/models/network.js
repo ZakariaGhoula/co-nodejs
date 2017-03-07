@@ -8,12 +8,12 @@ const Schema = mongoose.Schema;
 const NetworkSchema = new Schema({
 
         host: {
-            type: String,
+            type: Schema.Types.ObjectId,
             required: true
         },
         guest: {
-            type: Boolean,
-            default: true
+            type: Schema.Types.ObjectId,
+            required: true
         },
 
     },
