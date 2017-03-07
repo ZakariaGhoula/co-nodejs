@@ -1,3 +1,8 @@
 node_modules/
 node_modules/*
+<<<<<<< Updated upstream
 public/
+=======
+
+.idea/workspace.xml
+>>>>>>> Stashed changes
