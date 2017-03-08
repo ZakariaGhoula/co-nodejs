@@ -2,9 +2,11 @@ const ROLE_USER = require('./constants').ROLE_USER;
 const ROLE_TEAM = require('./constants').ROLE_TEAM;
 const ROLE_ADMIN = require('./constants').ROLE_ADMIN;
 
+const NetworkController = require('./controllers/network');
 const fs = require('fs');
 // Set user info from request
 exports.setUserInfo = function setUserInfo(request) {
+
     const getUserInfo = {
         _id: request._id,
         profile: {
@@ -22,6 +24,22 @@ exports.setUserInfo = function setUserInfo(request) {
 
         email: request.email,
         role: request.role,
+    };
+
+
+    return getUserInfo;
+
+};
+
+exports.setUserInfoNetwork = function setUserInfoNetwork(request,is_follow,is_abo) {
+    const getUserInfo = {
+        _id: request._id,
+        firstName: capitalize(request.profile.firstName),
+        lastName: capitalize(request.profile.lastName),
+        nickName: getNickName(request.profile.firstName, request.profile.lastName),
+        media: request.media,
+        follow: is_follow,
+        abos: is_abo,
     };
 
     return getUserInfo;

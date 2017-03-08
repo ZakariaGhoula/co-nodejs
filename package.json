@@ -2,6 +2,7 @@
   "name": "cookout-api",
   "version": "0.0.1",
   "dependencies": {
+    "async": "^2.1.5",
     "bcrypt": "^1.0.2",
     "bcrypt-nodejs": "0.0.3",
     "body-parser": "^1.17.1",

@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const NetworkController = require('./network');
 const setUserInfo = require('../helpers').setUserInfo;
 const writeImgToPath = require('../helpers').writeImgToPath;
 const decodeBase64Image = require('../helpers').decodeBase64Image;
@@ -17,10 +18,15 @@ exports.viewProfile = function (req, res, next) {
             res.status(400).json({error: 'No user could be found for this ID.'});
             return next(err);
         }
+        NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+            NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                const userToReturn = setUserInfo(user);
+                return res.status(200).json({user: userToReturn,network:{abos,follow}});
+            });
 
-        const userToReturn = setUserInfo(user);
+        })
 
-        return res.status(200).json({user: userToReturn});
+
     });
 };
 //--- update profile
@@ -53,10 +59,15 @@ exports.updateProfile = function (req, res, next) {
                     res.status(400).json({error: 'No user could be found for this ID.'});
                     return next(err);
                 }
+                req.params = {};
+                req.params.userId = userId;
+                NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                    NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                        const userToReturn = setUserInfo(user);
+                        return res.status(200).json({user: userToReturn,network:{abos,follow}});
+                    });
 
-                const userToReturn = setUserInfo(user);
-
-                return res.status(200).json({user: userToReturn});
+                })
             });
         }
     );
@@ -91,10 +102,15 @@ exports.updateProvider = function (req, res, next) {
                     res.status(400).json({error: 'No user could be found for this ID.'});
                     return next(err);
                 }
+                req.params = {};
+                req.params.userId = userId;
+                NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                    NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                        const userToReturn = setUserInfo(user);
+                        return res.status(200).json({user: userToReturn,network:{abos,follow}});
+                    });
 
-                const userToReturn = setUserInfo(user);
-
-                return res.status(200).json({user: userToReturn});
+                })
             });
         }
     );
@@ -131,9 +147,15 @@ exports.updateConfig = function (req, res, next) {
                     return next(err);
                 }
 
-                const userToReturn = setUserInfo(user);
+                req.params = {};
+                req.params.userId = userId;
+                NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                    NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                        const userToReturn = setUserInfo(user);
+                        return res.status(200).json({user: userToReturn,network:{abos,follow}});
+                    });
 
-                return res.status(200).json({user: userToReturn});
+                });
             });
         }
     );
@@ -163,9 +185,15 @@ exports.updateActivation = function (req, res, next) {
                 // req.session.historyData.message = 'Something went wrong, please try later.'
             }
 
-            const userToReturn = setUserInfo(user);
+            req.params = {};
+            req.params.userId = userId;
+            NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                    const userToReturn = setUserInfo(user);
+                    return res.status(200).json({user: userToReturn,network:{abos,follow}});
+                });
 
-            return res.status(200).json({user: userToReturn});
+            })
         });
 
 
@@ -209,9 +237,15 @@ exports.updateMedia = function (req, res, next) {
                     // req.session.historyData.message = 'Something went wrong, please try later.'
                 }
 
-                const userToReturn = setUserInfo(user);
+                req.params = {};
+                req.params.userId = userId;
+                NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                    NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                        const userToReturn = setUserInfo(user);
+                        return res.status(200).json({user: userToReturn,network:{abos,follow}});
+                    });
 
-                return res.status(200).json({user: userToReturn});
+                })
             });
     });
 

@@ -76,7 +76,8 @@ module.exports = function (app) {
 
     apiRoutes.use('/network', networkRoutes);
 
-    networkRoutes.get('/hosts/:userId', requireAuth, NetworkController.getAllNetworkHost);
+    networkRoutes.get('/abos/:userId', requireAuth, NetworkController.getAllNetworkHost);
+    networkRoutes.get('/follow/:userId', requireAuth, NetworkController.getAllNetworkGuest);
 
      //= ========================
     // Seasonal product Routes
