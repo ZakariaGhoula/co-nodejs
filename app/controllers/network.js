@@ -3,6 +3,7 @@ const User = require('../models/user');
 
 var mongoose = require('mongoose');
 
+<<<<<<< Updated upstream
 
 // get ALL seasonal products by lng
 exports.getAllNetworkHost = function (req, res, next) {
@@ -73,3 +74,5 @@ for(var i in hosts){
     }
     );*/
 };
+=======
+>>>>>>> Stashed changes
