@@ -62,7 +62,7 @@ exports.getAllNetworkHost = function (req, res, next) {
                 var user_guest = hosts[i]['user_guest'];
                 var abos = hosts[i].hosts.length > 0;
 
-              final.push(setUserInfoNetwork(user_guest, true, abos));
+              final.push(require('../helpers').setUserInfoNetwork(user_guest, true, abos));
 
             }
 
@@ -126,7 +126,7 @@ exports.retreiveAllNetworkHost = function (req, res, next) {
                 var user_guest = hosts[i]['user_guest'];
                 var abos = hosts[i].hosts.length > 0;
 
-              final.push(setUserInfoNetwork(user_guest, true, abos));
+              final.push(require('../helpers').setUserInfoNetwork(user_guest, true, abos));
 
             }
 
@@ -197,7 +197,7 @@ exports.getAllNetworkGuest = function (req, res, next) {
                 var user_guest = guest[i]['user_host'];
                 var follow = guest[i].guests.length > 0;
 
-              final.push(setUserInfoNetwork(user_guest,follow , true));
+              final.push(require('../helpers').setUserInfoNetwork(user_guest,follow , true));
 
             }
 
