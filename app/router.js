@@ -60,6 +60,8 @@ module.exports = function (app) {
     userRoutes.post('/config/update', requireAuth, UserController.updateConfig);
     userRoutes.post('/activation/update', requireAuth, UserController.updateActivation);
 
+    userRoutes.get('/autocomplete/:userId/:name', requireAuth, UserController.getAllUserAutoComplete);
+
 
     // Test protected route
     apiRoutes.get('/protected', requireAuth, (req, res) => {
@@ -76,7 +78,8 @@ module.exports = function (app) {
 
     apiRoutes.use('/network', networkRoutes);
 
-    networkRoutes.get('/hosts/:userId', requireAuth, NetworkController.getAllNetworkHost);
+    networkRoutes.get('/abos/:userId', requireAuth, NetworkController.getAllNetworkHost);
+    networkRoutes.get('/follow/:userId', requireAuth, NetworkController.getAllNetworkGuest);
 
      //= ========================
     // Seasonal product Routes

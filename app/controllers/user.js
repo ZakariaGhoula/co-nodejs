@@ -1,8 +1,10 @@
 const User = require('../models/user');
+const NetworkController = require('./network');
 const setUserInfo = require('../helpers').setUserInfo;
 const writeImgToPath = require('../helpers').writeImgToPath;
 const decodeBase64Image = require('../helpers').decodeBase64Image;
 var fs = require('fs');
+var mongoose = require('mongoose');
 //= =======================================
 // User Routes
 //= =======================================
@@ -17,10 +19,15 @@ exports.viewProfile = function (req, res, next) {
             res.status(400).json({error: 'No user could be found for this ID.'});
             return next(err);
         }
+        NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+            NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                const userToReturn = setUserInfo(user);
+                return res.status(200).json({user: userToReturn, network: {abos, follow}});
+            });
 
-        const userToReturn = setUserInfo(user);
+        })
 
-        return res.status(200).json({user: userToReturn});
+
     });
 };
 //--- update profile
@@ -53,10 +60,15 @@ exports.updateProfile = function (req, res, next) {
                     res.status(400).json({error: 'No user could be found for this ID.'});
                     return next(err);
                 }
+                req.params = {};
+                req.params.userId = userId;
+                NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                    NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                        const userToReturn = setUserInfo(user);
+                        return res.status(200).json({user: userToReturn, network: {abos, follow}});
+                    });
 
-                const userToReturn = setUserInfo(user);
-
-                return res.status(200).json({user: userToReturn});
+                })
             });
         }
     );
@@ -91,10 +103,15 @@ exports.updateProvider = function (req, res, next) {
                     res.status(400).json({error: 'No user could be found for this ID.'});
                     return next(err);
                 }
+                req.params = {};
+                req.params.userId = userId;
+                NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                    NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                        const userToReturn = setUserInfo(user);
+                        return res.status(200).json({user: userToReturn, network: {abos, follow}});
+                    });
 
-                const userToReturn = setUserInfo(user);
-
-                return res.status(200).json({user: userToReturn});
+                })
             });
         }
     );
@@ -131,9 +148,15 @@ exports.updateConfig = function (req, res, next) {
                     return next(err);
                 }
 
-                const userToReturn = setUserInfo(user);
+                req.params = {};
+                req.params.userId = userId;
+                NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                    NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                        const userToReturn = setUserInfo(user);
+                        return res.status(200).json({user: userToReturn, network: {abos, follow}});
+                    });
 
-                return res.status(200).json({user: userToReturn});
+                });
             });
         }
     );
@@ -163,13 +186,21 @@ exports.updateActivation = function (req, res, next) {
                 // req.session.historyData.message = 'Something went wrong, please try later.'
             }
 
-            const userToReturn = setUserInfo(user);
+            req.params = {};
+            req.params.userId = userId;
+            NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                    const userToReturn = setUserInfo(user);
+                    return res.status(200).json({user: userToReturn, network: {abos, follow}});
+                });
 
-            return res.status(200).json({user: userToReturn});
+            })
         });
 
 
 };
+
+//--- update media
 exports.updateMedia = function (req, res, next) {
     const userId = req.body.userId;
 
@@ -209,11 +240,79 @@ exports.updateMedia = function (req, res, next) {
                     // req.session.historyData.message = 'Something went wrong, please try later.'
                 }
 
-                const userToReturn = setUserInfo(user);
+                req.params = {};
+                req.params.userId = userId;
+                NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                    NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                        const userToReturn = setUserInfo(user);
+                        return res.status(200).json({user: userToReturn, network: {abos, follow}});
+                    });
 
-                return res.status(200).json({user: userToReturn});
+                })
             });
     });
+
+};
+
+//--- autocomplete user
+
+exports.getAllUserAutoComplete = function (req, res, next) {
+
+    if (!req.params.name) {
+        return res.status(500).json({error: "name is required."});
+    }
+    if (!req.params.userId) {
+        return res.status(500).json({error: "userId is required."});
+    }
+    User.aggregate([{
+            $match: {
+                $and: [{"_id": {$ne: mongoose.Types.ObjectId(req.params.userId)}},
+                    {$or: [{'profile.lastName': {$regex: new RegExp(req.params.name, "ig")}}, {'profile.firstName': {$regex: new RegExp(req.params.name, "ig")}}]}
+                ]
+            }
+        },
+            {
+                $lookup: {
+                    from: "networks",
+                    localField: "_id",
+                    foreignField: "guest",
+                    as: "user_guest"
+                }
+            }, {$unwind: '$user_guest'}, {
+                $lookup: {
+                    from: "users",
+                    localField: "user_guest.host",
+                    foreignField: "_id",
+                    as: "guests"
+                }
+            }, {
+                "$project": {
+                    "id": 1,
+
+                    email:"$email",profile:"$profile",provider:"$provider",role:"$role",config:"$config",media:"$media",
+                    "guests": {
+                        _id:1,
+                        email:1,
+                        profile:1,
+                        media:1,
+
+                    }
+                }
+            },
+            { $group: { _id: {'id':'$_id',email:"$email",profile:"$profile",provider:"$provider",role:"$role",config:"$config",media:"$media"},
+                follow: { $addToSet: '$guests' } , hosts   : { $addToSet: '$guests' } } }
+
+        ],
+        function (err, user) {
+            if (err) {
+                console.log(err);
+                res.status(500).send({error: err});
+                return next(err);
+            }
+
+            return res.status(200).json({users: user});
+        }
+    );
 
 };
 
