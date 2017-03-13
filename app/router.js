@@ -43,6 +43,8 @@ module.exports = function (app) {
     // Password reset route (change password using token)
     authRoutes.post('/reset-password/:token', AuthenticationController.verifyToken);
 
+    authRoutes.post('/update-password', requireAuth, AuthenticationController.changePassword);
+
     //= ========================
     // User Routes
     //= ========================

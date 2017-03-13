@@ -2,9 +2,9 @@ const User = require('../models/user');
 const NetworkController = require('./network');
 const setUserInfo = require('../helpers').setUserInfo;
 const writeImgToPath = require('../helpers').writeImgToPath;
-const decodeBase64Image = require('../helpers').decodeBase64Image;
 var fs = require('fs');
 var mongoose = require('mongoose');
+var _ = require("lodash");
 //= =======================================
 // User Routes
 //= =======================================
@@ -34,7 +34,7 @@ exports.viewProfile = function (req, res, next) {
 
 exports.updateProfile = function (req, res, next) {
     const userId = req.body.userId;
-
+    console.log(userId);
     if (req.user._id.toString() !== userId) {
         return res.status(401).json({error: 'You are not authorized to view this user profile.'});
     }
@@ -188,13 +188,22 @@ exports.updateActivation = function (req, res, next) {
 
             req.params = {};
             req.params.userId = userId;
-            NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
-                NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
-                    const userToReturn = setUserInfo(user);
-                    return res.status(200).json({user: userToReturn, network: {abos, follow}});
-                });
+            User.findById(userId, (err, user) => {
+                if (err) {
+                    res.status(400).json({error: 'No user could be found for this ID.'});
+                    return next(err);
+                }
 
-            })
+                req.params = {};
+                req.params.userId = userId;
+                NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                    NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                        const userToReturn = setUserInfo(user);
+                        return res.status(200).json({user: userToReturn, network: {abos, follow}});
+                    });
+
+                });
+            });
         });
 
 
@@ -211,7 +220,7 @@ exports.updateMedia = function (req, res, next) {
     if (!req.body.imageURI) {
         return res.status(500).json({error: "imageURI is required."});
     }
-    const imgURI = req.body.imageURI;
+    var imgURI = req.body.imageURI.uri;
 
 
     var imageBuffer = decodeBase64Image(imgURI);
@@ -229,26 +238,32 @@ exports.updateMedia = function (req, res, next) {
                 $set: {
                     media: {
                         type: "photo",
-                        name: 'public/users/photo/' + file_name,
-                        path: 'public/users/photo/' + file_name
+                        name: file_name,
+                        path: file_name
                     }
 
                 }
-            }, function (err2, data) {
+            }, function (err2, data_user) {
                 if (err2) {
                     return res.status(500).json({error: 'Something went wrong, please try later.'});
                     // req.session.historyData.message = 'Something went wrong, please try later.'
                 }
+                User.findById(userId, (err, user) => {
+                    if (err) {
+                        res.status(400).json({error: 'No user could be found for this ID.'});
+                        return next(err);
+                    }
 
-                req.params = {};
-                req.params.userId = userId;
-                NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
-                    NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
-                        const userToReturn = setUserInfo(user);
-                        return res.status(200).json({user: userToReturn, network: {abos, follow}});
+                    req.params = {};
+                    req.params.userId = userId;
+                    NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                        NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                            const userToReturn = setUserInfo(user);
+                            return res.status(200).json({user: userToReturn, network: {abos, follow}});
+                        });
+
                     });
-
-                })
+                });
             });
     });
 
@@ -288,19 +303,74 @@ exports.getAllUserAutoComplete = function (req, res, next) {
             }, {
                 "$project": {
                     "id": 1,
-
-                    email:"$email",profile:"$profile",provider:"$provider",role:"$role",config:"$config",media:"$media",
+                    email: "$email",
+                    profile: "$profile",
+                    provider: "$provider",
+                    role: "$role",
+                    config: "$config",
+                    media: "$media",
                     "guests": {
-                        _id:1,
-                        email:1,
-                        profile:1,
-                        media:1,
+                        _id: 1,
+                        email: 1,
+                        profile: 1,
+                        media: 1,
+
+                    }
+                }
+            }, {
+                $lookup: {
+                    from: "networks",
+                    localField: "_id",
+                    foreignField: "host",
+                    as: "user_host"
+                }
+            }, {$unwind: '$user_host'}, {
+                $lookup: {
+                    from: "users",
+                    localField: "user_host.guest",
+                    foreignField: "_id",
+                    as: "hosts"
+                }
+            }, {
+                "$project": {
+                    "id": 1,
+                    email: "$email",
+                    profile: "$profile",
+                    provider: "$provider",
+                    role: "$role",
+                    config: "$config",
+                    media: "$media",
+                    "guests": {
+                        _id: 1,
+                        email: 1,
+                        profile: 1,
+                        media: 1,
+
+                    }, "hosts": {
+                        _id: 1,
+                        email: 1,
+                        profile: 1,
+                        media: 1,
 
                     }
                 }
             },
-            { $group: { _id: {'id':'$_id',email:"$email",profile:"$profile",provider:"$provider",role:"$role",config:"$config",media:"$media"},
-                follow: { $addToSet: '$guests' } , hosts   : { $addToSet: '$guests' } } }
+            {
+                $group: {
+                    _id: {
+                        'id': '$_id',
+                        email: "$email",
+                        followed: "false",
+                        abo: "false",
+                        profile: "$profile",
+                        provider: "$provider",
+                        role: "$role",
+                        config: "$config",
+                        media: "$media"
+                    },
+                    follow: {$addToSet: '$guests'}, hosts: {$addToSet: '$hosts'}
+                }
+            }
 
         ],
         function (err, user) {
@@ -310,7 +380,34 @@ exports.getAllUserAutoComplete = function (req, res, next) {
                 return next(err);
             }
 
-            return res.status(200).json({users: user});
+            var final = [];
+
+            for (var j in user) {
+                var host = false;
+                var follow = false;
+                for (var j2 in user[j].hosts) {
+                    if (typeof user[j].hosts[j2][0] !== "undefined") {
+                        if (user[j].hosts[j2][0]._id == req.params.userId) {
+                            follow = true;
+
+                        }
+                    }
+                }
+                for (var j2 in user[j].follow) {
+                    if (typeof user[j].follow[j2][0] !== "undefined") {
+                        if (user[j].follow[j2][0]._id == req.params.userId) {
+                            host = true;
+
+                        }
+                    }
+                }
+                user[j]._id.followed = host;
+                user[j]._id.abo = follow;
+
+                final.push(user[j]);
+            }
+
+            return res.status(200).json({users: final});
         }
     );
 
@@ -366,3 +463,17 @@ exports.thumbImg = function (req, res, next) {
 }
 
 
+function decodeBase64Image(dataString) {
+    console.log(dataString);
+    var matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/),
+        response = {};
+
+    if (matches.length !== 3) {
+        return new Error('Invalid input string');
+    }
+
+    response.type = matches[1];
+    response.data = new Buffer(matches[2], 'base64');
+
+    return response;
+}
