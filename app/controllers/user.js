@@ -4,6 +4,7 @@ const setUserInfo = require('../helpers').setUserInfo;
 const writeImgToPath = require('../helpers').writeImgToPath;
 var fs = require('fs');
 var mongoose = require('mongoose');
+var _ = require("lodash");
 //= =======================================
 // User Routes
 //= =======================================
@@ -222,7 +223,7 @@ exports.updateMedia = function (req, res, next) {
     var imgURI = req.body.imageURI.uri;
 
 
-    var imageBuffer =  decodeBase64Image(imgURI);
+    var imageBuffer = decodeBase64Image(imgURI);
     var current_Date = new Date();
     var file_name = 'avatar-' + current_Date.getYear() + current_Date.getMonth() + current_Date.getDay() + current_Date.getHours() + current_Date.getMinutes() + current_Date.getSeconds() + '-' + userId + '.jpg';
     fs.writeFile('public/users/photo/' + file_name, imageBuffer.data, function (err) {
@@ -237,8 +238,8 @@ exports.updateMedia = function (req, res, next) {
                 $set: {
                     media: {
                         type: "photo",
-                        name:  file_name,
-                        path:  file_name
+                        name: file_name,
+                        path: file_name
                     }
 
                 }
@@ -302,7 +303,6 @@ exports.getAllUserAutoComplete = function (req, res, next) {
             }, {
                 "$project": {
                     "id": 1,
-
                     email: "$email",
                     profile: "$profile",
                     provider: "$provider",
@@ -317,19 +317,58 @@ exports.getAllUserAutoComplete = function (req, res, next) {
 
                     }
                 }
+            }, {
+                $lookup: {
+                    from: "networks",
+                    localField: "_id",
+                    foreignField: "host",
+                    as: "user_host"
+                }
+            }, {$unwind: '$user_host'}, {
+                $lookup: {
+                    from: "users",
+                    localField: "user_host.guest",
+                    foreignField: "_id",
+                    as: "hosts"
+                }
+            }, {
+                "$project": {
+                    "id": 1,
+                    email: "$email",
+                    profile: "$profile",
+                    provider: "$provider",
+                    role: "$role",
+                    config: "$config",
+                    media: "$media",
+                    "guests": {
+                        _id: 1,
+                        email: 1,
+                        profile: 1,
+                        media: 1,
+
+                    }, "hosts": {
+                        _id: 1,
+                        email: 1,
+                        profile: 1,
+                        media: 1,
+
+                    }
+                }
             },
             {
                 $group: {
                     _id: {
                         'id': '$_id',
                         email: "$email",
+                        followed: "false",
+                        abo: "false",
                         profile: "$profile",
                         provider: "$provider",
                         role: "$role",
                         config: "$config",
                         media: "$media"
                     },
-                    follow: {$addToSet: '$guests'}, hosts: {$addToSet: '$guests'}
+                    follow: {$addToSet: '$guests'}, hosts: {$addToSet: '$hosts'}
                 }
             }
 
@@ -341,7 +380,34 @@ exports.getAllUserAutoComplete = function (req, res, next) {
                 return next(err);
             }
 
-            return res.status(200).json({users: user});
+            var final = [];
+
+            for (var j in user) {
+                var host = false;
+                var follow = false;
+                for (var j2 in user[j].hosts) {
+                    if (typeof user[j].hosts[j2][0] !== "undefined") {
+                        if (user[j].hosts[j2][0]._id == req.params.userId) {
+                            follow = true;
+
+                        }
+                    }
+                }
+                for (var j2 in user[j].follow) {
+                    if (typeof user[j].follow[j2][0] !== "undefined") {
+                        if (user[j].follow[j2][0]._id == req.params.userId) {
+                            host = true;
+
+                        }
+                    }
+                }
+                user[j]._id.followed = host;
+                user[j]._id.abo = follow;
+
+                final.push(user[j]);
+            }
+
+            return res.status(200).json({users: final});
         }
     );
 
