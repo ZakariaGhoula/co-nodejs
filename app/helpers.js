@@ -3,9 +3,17 @@ const ROLE_TEAM = require('./constants').ROLE_TEAM;
 const ROLE_ADMIN = require('./constants').ROLE_ADMIN;
 
 const NetworkController = require('./controllers/network');
-const fs = require('fs');
+
+var fs = require("fs");
+var lwip = require('lwip');
+var jf = require('jsonfile')
+var imagemin = require('image-min');
+var path = require('path');
+var mkdirp = require('mkdirp');
 const moment = require('moment');
 // Set user info from request
+var sleep = require('sleep');
+
 exports.setUserInfo = function setUserInfo(request) {
 
     const getUserInfo = {
@@ -37,6 +45,7 @@ exports.setUserInfoNetwork = function setUserInfoNetwork(request, is_follow, is_
         _id: request._id,
         firstName: capitalize(request.profile.firstName),
         lastName: capitalize(request.profile.lastName),
+        gender: (request.profile.gender),
         nickName: getNickName(request.profile.firstName, request.profile.lastName),
         media: request.media,
         follow: is_follow,
@@ -165,3 +174,188 @@ var capitalize = function capitalize(s) {
     // returns the first letter capitalized + the string from index 1 and out aka. the rest of the string
     return s[0].toUpperCase() + s.substr(1);
 }
+
+
+var imageRecipeBulder = function imageRecipeBulder(imageBuffer, folder, file_name) {
+
+
+
+
+        lwip.open(imageBuffer.data, 'jpg', function (err, image) {
+            if (err) {
+                lwip.open(imageBuffer.data, 'png', function (err, image_main) {
+                    //--- interior
+                    if (image_main !== null) {
+                        image_main.scale((320 / image_main.width()), function (err, image) {
+                            image.writeFile(folder + "/" + file_name + "_interior.jpg", function (err) {
+                                if (err) return console.log(err);
+
+
+                               sleep.sleep(1)
+                            });
+                        });
+                    }
+
+                });
+                //--- very_small
+                lwip.open(imageBuffer.data, 'png', function (err, image_main2) {
+                    //--- interior
+                    if (image_main2 !== null) {
+                        image_main2.resize(80, 80, function (err, image_small) {
+                            image_small.writeFile(folder + "/" + file_name + "_very_small.jpg", function (err) {
+                                if (err) return console.log(err);
+
+
+                               sleep.sleep(1)
+                            });
+                        });
+                    }
+                });
+                //--- list_image
+                lwip.open(imageBuffer.data, 'png', function (err, image_main3) {
+                    if (image_main3 !== null) {
+                        image_main3.scale((100 / image_main3.width()), function (err, image_list_img) {
+                            image_list_img.writeFile(folder + "/" + file_name + "_list_image.jpg", function (err) {
+                                if (err) return console.log(err);
+
+                               sleep.sleep(1)
+                            });
+                        });
+                    }
+                });
+                //--- actu
+                lwip.open(imageBuffer.data, 'png', function (err, image_main4) {
+                    if (image_main4 !== null) {
+                        image_main4.scale((160 / image_main4.width()), function (err, image_actu) {
+                            image_actu.writeFile(folder + "/" + file_name + "_actu.jpg", function (err) {
+                                if (err) return console.log(err);
+
+                               sleep.sleep(1)
+                            });
+                        });
+                    }
+                }); //--- mon cookout
+                lwip.open(imageBuffer.data, 'png', function (err, image_main5) {
+                    if (image_main5 !== null) {
+                    image_main5.cover(420, 160, function (err, image_actu) {
+                        image_actu.writeFile(folder + "/" + file_name + "_cookout.jpg", function (err) {
+                            if (err) return console.log(err);
+
+                           sleep.sleep(1)
+                        });
+                    });
+                }
+                });
+                //--- slider
+                lwip.open(imageBuffer.data, 'png', function (err, image_main6) {
+                    if (image_main6 !== null) {
+                        image_main6.cover(420, 230, function (err, image_actu) {
+                            image_actu.writeFile(folder + "/" + file_name + "_slider.jpg", function (err) {
+                                if (err) return console.log(err);
+
+                               sleep.sleep(1)
+                            });
+                        });
+                    }
+                });
+                //--- original
+                lwip.open(imageBuffer.data, 'png', function (err, image_main7) {
+                    if (image_main7 !== null) {
+                        image_main7.scale(1, function (err, image_actu) {
+                            image_actu.writeFile(folder + "/" + file_name + "_original.jpg", function (err) {
+                                if (err) return console.log(err);
+
+                               sleep.sleep(1)
+                            });
+                        });
+                    }
+                });
+
+
+            } else {
+                lwip.open(imageBuffer.data, 'jpg', function (err, image_main) {
+                    //--- interior
+                    image_main.scale((320 / image_main.width()), function (err, image) {
+                        image.writeFile(folder + "/" + file_name + "_interior.jpg", function (err) {
+                            if (err) return console.log(err);
+
+
+                           sleep.sleep(1)
+                        });
+                    });
+
+                });
+                //--- very_small
+                lwip.open(imageBuffer.data, 'jpg', function (err, image_main2) {
+                    //--- interior
+                    image_main2.resize(80, 80, function (err, image_small) {
+                        image_small.writeFile(folder + "/" + file_name + "_very_small.jpg", function (err) {
+                            if (err) return console.log(err);
+
+
+                           sleep.sleep(1)
+                        });
+                    });
+                });
+                //--- list_image
+                lwip.open(imageBuffer.data, 'jpg', function (err, image_main3) {
+
+                    image_main3.scale((100 / image_main3.width()), function (err, image_list_img) {
+                        image_list_img.writeFile(folder + "/" + file_name + "_list_image.jpg", function (err) {
+                            if (err) return console.log(err);
+
+                           sleep.sleep(1)
+                        });
+                    });
+                });
+                //--- actu
+                lwip.open(imageBuffer.data, 'jpg', function (err, image_main4) {
+
+                    image_main4.scale((160 / image_main4.width()), function (err, image_actu) {
+                        image_actu.writeFile(folder + "/" + file_name + "_actu.jpg", function (err) {
+                            if (err) return console.log(err);
+
+                           sleep.sleep(1)
+                        });
+                    });
+                }); //--- mon cookout
+                lwip.open(imageBuffer.data, 'jpg', function (err, image_main5) {
+
+                    image_main5.cover(420, 160, function (err, image_actu) {
+                        image_actu.writeFile(folder + "/" + file_name + "_cookout.jpg", function (err) {
+                            if (err) return console.log(err);
+
+                           sleep.sleep(1)
+                        });
+                    });
+                });
+                //--- slider
+                lwip.open(imageBuffer.data, 'jpg', function (err, image_main6) {
+
+                    image_main6.cover(420, 230, function (err, image_actu) {
+                        image_actu.writeFile(folder + "/" + file_name + "_slider.jpg", function (err) {
+                            if (err) return console.log(err);
+
+                           sleep.sleep(1)
+                        });
+                    });
+                }); //--- original
+                lwip.open(imageBuffer.data, 'jpg', function (err, image_main7) {
+
+                    image_main7.scale(1, function (err, image_actu) {
+                        image_actu.writeFile(folder + "/" + file_name + "_original.jpg", function (err) {
+                            if (err) return console.log(err);
+
+                           sleep.sleep(1)
+                        });
+                    });
+                });
+
+                return true;
+
+            }
+        });
+
+};
+
+exports.imageRecipeBulder = imageRecipeBulder;

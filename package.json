@@ -9,8 +9,13 @@
     "crypto": "0.0.3",
     "express": "^4.15.2",
     "fs": "0.0.1-security",
+    "image-min": "^0.3.2",
+    "jpegtran-bin": "^3.2.0",
+    "jsonfile": "^2.4.0",
     "jsonwebtoken": "^7.3.0",
     "lodash": "^4.17.4",
+    "lwip": "0.0.9",
+    "mkdirp": "^0.5.1",
     "moment": "^2.17.1",
     "mongoose": "^4.8.6",
     "morgan": "^1.8.1",
@@ -19,6 +24,7 @@
     "passport-local": "^1.0.0",
     "path": "^0.12.7",
     "sharp": "^0.17.2",
+    "sleep": "^5.1.0",
     "socket.io": "^1.7.3"
   }
 }

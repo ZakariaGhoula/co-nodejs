@@ -7,7 +7,7 @@ var async = require('async');
 
 
 // get ALL seasonal products by lng
-exports.getAllNetworkHost = function (req, res, next) {
+var getAllNetworkHost = function (req, res, next) {
     const userId = req.params.userId;
     /*
      if (req.user._id.toString() !== userId) {
@@ -25,7 +25,7 @@ exports.getAllNetworkHost = function (req, res, next) {
                     foreignField: "_id",
                     as: "user_guest"
                 }
-            },{ $unwind : "$user_guest" },
+            }, {$unwind: "$user_guest"},
 
             {
                 $lookup: {
@@ -62,19 +62,20 @@ exports.getAllNetworkHost = function (req, res, next) {
                 var user_guest = hosts[i]['user_guest'];
                 var abos = hosts[i].hosts.length > 0;
 
-              final.push(require('../helpers').setUserInfoNetwork(user_guest, true, abos));
+                final.push(require('../helpers').setUserInfoNetwork(user_guest, true, abos));
 
             }
 
 
-            return res.status(200).json({abos: final,count_abos: final.length});
+            return res.status(200).json({followers: final, count_abos: final.length});
         }
     );
 
 
-
 };
-exports.retreiveAllNetworkHost = function (req, res, next) {
+exports.getAllNetworkHost = getAllNetworkHost;
+
+var retreiveAllNetworkHost = function (req, res, next) {
     const userId = req.params.userId;
     /*
      if (req.user._id.toString() !== userId) {
@@ -90,7 +91,7 @@ exports.retreiveAllNetworkHost = function (req, res, next) {
                     foreignField: "_id",
                     as: "user_guest"
                 }
-            },{ $unwind : "$user_guest" },
+            }, {$unwind: "$user_guest"},
 
             {
                 $lookup: {
@@ -117,7 +118,7 @@ exports.retreiveAllNetworkHost = function (req, res, next) {
             }
         ], function (err, hosts) {
             if (err) {
-                return(err);
+                return (err);
 
             }
             var final = [];
@@ -126,23 +127,22 @@ exports.retreiveAllNetworkHost = function (req, res, next) {
                 var user_guest = hosts[i]['user_guest'];
                 var abos = hosts[i].hosts.length > 0;
 
-              final.push(require('../helpers').setUserInfoNetwork(user_guest, true, abos));
+                final.push(require('../helpers').setUserInfoNetwork(user_guest, true, abos));
 
             }
 
-           var return_data = {abos: final,count_abos: final.length};
+            var return_data = {followers: final, count_abos: final.length};
 
             return next(return_data);
         }
     );
 
 
-
 };
 
+exports.retreiveAllNetworkHost = retreiveAllNetworkHost;
 
-
-exports.getAllNetworkGuest = function (req, res, next) {
+var getAllNetworkGuest = function (req, res, next) {
     const userId = req.params.userId;
     /*
      if (req.user._id.toString() !== userId) {
@@ -160,7 +160,7 @@ exports.getAllNetworkGuest = function (req, res, next) {
                     foreignField: "_id",
                     as: "user_host"
                 }
-            },{ $unwind : "$user_host" },
+            }, {$unwind: "$user_host"},
 
             {
                 $lookup: {
@@ -197,22 +197,21 @@ exports.getAllNetworkGuest = function (req, res, next) {
                 var user_guest = guest[i]['user_host'];
                 var follow = guest[i].guests.length > 0;
 
-              final.push(require('../helpers').setUserInfoNetwork(user_guest,follow , true));
+                final.push(require('../helpers').setUserInfoNetwork(user_guest, follow, true));
 
             }
 
 
-            return res.status(200).json({followers: final,count_abos: final.length});
+            return res.status(200).json({abos: final, count_abos: final.length});
         }
     );
 
 
-
 };
+exports.getAllNetworkGuest = getAllNetworkGuest;
 
 
-
-exports.retrieveAllNetworkGuest = function (req, res, next) {
+var retrieveAllNetworkGuest = function (req, res, next) {
     const userId = req.params.userId;
     /*
      if (req.user._id.toString() !== userId) {
@@ -230,7 +229,7 @@ exports.retrieveAllNetworkGuest = function (req, res, next) {
                     foreignField: "_id",
                     as: "user_host"
                 }
-            },{ $unwind : "$user_host" },
+            }, {$unwind: "$user_host"},
 
             {
                 $lookup: {
@@ -266,16 +265,103 @@ exports.retrieveAllNetworkGuest = function (req, res, next) {
                 var user_guest = guests[i]['user_host'];
                 var follow = guests[i].guests.length > 0;
 
-               final.push(require('../helpers').setUserInfoNetwork(user_guest,follow , true));
+                final.push(require('../helpers').setUserInfoNetwork(user_guest, follow, true));
 
             }
 
-        return next({followers: final,count_abos: final.length});
+            return next({abos: final, count_abos: final.length});
         }
     );
 
 
-
 };
+exports.retrieveAllNetworkGuest = retrieveAllNetworkGuest;
+
+exports.removeFollower = function (req, res, next) {
+    if (!req.body.id_user) {
+        return res.status(500).json({error: "id_user  is required."});
+    }
+    if (!req.body.id_user_external) {
+        return res.status(500).json({error: "id_user_exter  is required."});
+    }
+
+    /*
+     if (req.user._id.toString() !== userId) {
+     return res.status(401).json({error: 'You are not authorized to view this user profile.'});
+     }
+     */
+
+
+    Network.remove({
+            host: mongoose.Types.ObjectId(req.body.id_user_external),
+            guest: mongoose.Types.ObjectId(req.body.id_user),
+        },
+        function (err, data) {
+            if (err) {
+                console.log(err);
+                return next(err);
+            }
+            User.findById(mongoose.Types.ObjectId(req.body.id_user_external), (err, user) => {
+                if (err) {
+                    res.status(400).json({error: 'No user could be found for this ID.'});
+                    return next(err);
+                }
+                req.params = {};
+                req.params.userId = req.body.id_user_external;
+                retreiveAllNetworkHost(req, res, function (abos) {
+                    retrieveAllNetworkGuest(req, res, function (follow) {
+                        const userToReturn = require('../helpers').setUserInfo(user);
+                        return res.status(200).json({user: userToReturn, network: {abos, follow}});
+                    });
+
+                })
+
+
+            })
+        });
+};
+exports.addFollower = function (req, res, next) {
+    if (!req.body.id_user) {
+        return res.status(500).json({error: "id_user  is required."});
+    }
+    if (!req.body.id_user_external) {
+        return res.status(500).json({error: "id_user_exter  is required."});
+    }
+
+    /*
+     if (req.user._id.toString() !== userId) {
+     return res.status(401).json({error: 'You are not authorized to view this user profile.'});
+     }
+     */
+
+    var net = new Network();
+    net.host = mongoose.Types.ObjectId(req.body.id_user_external);
+    net.guest = mongoose.Types.ObjectId(req.body.id_user);
+    net.save(
+        function (err, data) {
+            if (err) {
+                console.log(err);
+                return next(err);
+            }
+            User.findById(mongoose.Types.ObjectId(req.body.id_user_external), (err, user) => {
+                if (err) {
+                    res.status(400).json({error: 'No user could be found for this ID.'});
+                    return next(err);
+                }
+                req.params = {};
+                req.params.userId = req.body.id_user_external;
+                retreiveAllNetworkHost(req, res, function (abos) {
+                    retrieveAllNetworkGuest(req, res, function (follow) {
+                        const userToReturn = require('../helpers').setUserInfo(user);
+                        return res.status(200).json({user: userToReturn, network: {abos, follow}});
+                    });
+
+                })
+
+
+            })
+        });
+};
+
 
 

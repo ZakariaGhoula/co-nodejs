@@ -75,3 +75,8 @@ exports.getAllTagsAutoComplete = function (req, res, next) {
 
 };
 
+exports.getAllRecipesByUserId = function (req, res, next) {
+    console.log(req);
+    const userId = req.params.userId;
+    return res.status(200).json({tags: "dd"});
+}

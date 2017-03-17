@@ -3,6 +3,7 @@ const UserController = require('./controllers/user');
 const SeasonalProductController = require('./controllers/seasonal_product');
 const TagController = require('./controllers/tag');
 const NetworkController = require('./controllers/network');
+const RecipeController = require('./controllers/recipes');
 const express = require('express');
 const passport = require('passport');
 const ROLE_USER = require('./constants').ROLE_USER;
@@ -22,7 +23,8 @@ module.exports = function (app) {
         userRoutes = express.Router(),
         networkRoutes = express.Router(),
         seasonalProductRoutes = express.Router(),
-        tagRoutes = express.Router();
+        tagRoutes = express.Router(),
+        recipeRoutes = express.Router();
 
     //= ========================
     // Auth Routes
@@ -54,6 +56,7 @@ module.exports = function (app) {
 
     // View user profile route
     userRoutes.get('/:userId', requireAuth, UserController.viewProfile);
+    userRoutes.get('/external/:userId', requireAuth, UserController.viewExternalProfile);
    // userRoutes.get('/thumb/:userId', requireAuth, UserController.thumbImg);
 
     userRoutes.post('/media/update', requireAuth, UserController.updateMedia);
@@ -74,6 +77,19 @@ module.exports = function (app) {
         res.send({ content: 'Admin dashboard is working.' });
     });
 
+    //
+    // = ========================
+    // Tag Routes
+    //= ========================
+
+
+    apiRoutes.use('/recipes', recipeRoutes);
+
+    recipeRoutes.get('/traite', requireAuth, RecipeController.getTraitementRecipe);
+   recipeRoutes.get('/:userId', requireAuth, RecipeController.getAllRecipesByUserId);
+   recipeRoutes.post('/recipe/delete', requireAuth, RecipeController.deleteRecipe);
+
+
     //= ========================
     // Seasonal product Routes
     //= ========================
@@ -82,6 +98,8 @@ module.exports = function (app) {
 
     networkRoutes.get('/abos/:userId', requireAuth, NetworkController.getAllNetworkHost);
     networkRoutes.get('/follow/:userId', requireAuth, NetworkController.getAllNetworkGuest);
+    networkRoutes.post('/follow/add', requireAuth, NetworkController.addFollower);
+    networkRoutes.post('/follow/remove', requireAuth, NetworkController.removeFollower);
 
      //= ========================
     // Seasonal product Routes
@@ -102,6 +120,10 @@ module.exports = function (app) {
     tagRoutes.get('/:lng', requireAuth, TagController.getAllTags);
     tagRoutes.get('/suggest/:lng', requireAuth, TagController.getAllTagsSuggest);
     tagRoutes.get('/autocomplete/:lng/:name', requireAuth, TagController.getAllTagsAutoComplete);
+
+
+
+
 
     // Set url for API group routes
     app.use('/api', apiRoutes);
