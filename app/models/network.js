@@ -21,5 +21,5 @@ const NetworkSchema = new Schema({
         timestamps: true
     });
 
-
+NetworkSchema.index({ host: 1, guest: 1 }, { unique: true });
 module.exports = mongoose.model('network', NetworkSchema);

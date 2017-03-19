@@ -23,9 +23,16 @@ exports.viewProfile = function (req, res, next) {
         NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
             NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
                 RecipeController.getAllRecipesByUserId(req, res, function (recipes) {
+                    RecipeController.getAllRecipesLikeByUserId(req, res, function (recipes_liked) {
 
-                    const userToReturn = setUserInfo(user);
-                    return res.status(200).json({user: userToReturn,recipes:recipes,network: {abos, follow}});
+                        const userToReturn = setUserInfo(user);
+                        return res.status(200).json({
+                            user: userToReturn,
+                            recipes: recipes,
+                            recipes_liked: recipes_liked,
+                            network: {abos, follow}
+                        });
+                    });
                 });
             });
 
@@ -36,29 +43,29 @@ exports.viewProfile = function (req, res, next) {
 };
 exports.viewExternalProfile = function (req, res, next) {
 
-        const userId = req.params.userId;
+    const userId = req.params.userId;
 
 
-        User.findById(userId, (err, user) => {
-            if (err) {
-                res.status(400).json({error: 'No user could be found for this ID.'});
-                return next(err);
-            }
-            NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
-                NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
-                    RecipeController.getAllRecipesByUserId(req, res, function (recipes) {
+    User.findById(userId, (err, user) => {
+        if (err) {
+            res.status(400).json({error: 'No user could be found for this ID.'});
+            return next(err);
+        }
+        NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+            NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                RecipeController.getAllRecipesByUserId(req, res, function (recipes) {
 
 
-                        const userToReturn = setUserInfo(user);
-                        return res.status(200).json({user: userToReturn,recipes:recipes,network: {abos, follow}});
-                    });
-
+                    const userToReturn = setUserInfo(user);
+                    return res.status(200).json({user: userToReturn, recipes: recipes, network: {abos, follow}});
                 });
 
-            })
+            });
+
+        })
 
 
-        });
+    });
 
 
 };
@@ -100,7 +107,11 @@ exports.updateProfile = function (req, res, next) {
 
 
                             const userToReturn = setUserInfo(user);
-                            return res.status(200).json({user: userToReturn,recipes:recipes,network: {abos, follow}});
+                            return res.status(200).json({
+                                user: userToReturn,
+                                recipes: recipes,
+                                network: {abos, follow}
+                            });
                         });
 
                     });
@@ -148,7 +159,11 @@ exports.updateProvider = function (req, res, next) {
 
 
                             const userToReturn = setUserInfo(user);
-                            return res.status(200).json({user: userToReturn,recipes:recipes,network: {abos, follow}});
+                            return res.status(200).json({
+                                user: userToReturn,
+                                recipes: recipes,
+                                network: {abos, follow}
+                            });
                         });
 
                     });
@@ -198,7 +213,11 @@ exports.updateConfig = function (req, res, next) {
 
 
                             const userToReturn = setUserInfo(user);
-                            return res.status(200).json({user: userToReturn,recipes:recipes,network: {abos, follow}});
+                            return res.status(200).json({
+                                user: userToReturn,
+                                recipes: recipes,
+                                network: {abos, follow}
+                            });
                         });
 
                     });
@@ -249,7 +268,11 @@ exports.updateActivation = function (req, res, next) {
 
 
                             const userToReturn = setUserInfo(user);
-                            return res.status(200).json({user: userToReturn,recipes:recipes,network: {abos, follow}});
+                            return res.status(200).json({
+                                user: userToReturn,
+                                recipes: recipes,
+                                network: {abos, follow}
+                            });
                         });
 
                     });
@@ -314,7 +337,11 @@ exports.updateMedia = function (req, res, next) {
 
 
                                 const userToReturn = setUserInfo(user);
-                                return res.status(200).json({user: userToReturn,recipes:recipes,network: {abos, follow}});
+                                return res.status(200).json({
+                                    user: userToReturn,
+                                    recipes: recipes,
+                                    network: {abos, follow}
+                                });
                             });
 
                         });

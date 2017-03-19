@@ -88,6 +88,20 @@ module.exports = function (app) {
     recipeRoutes.get('/traite', requireAuth, RecipeController.getTraitementRecipe);
    recipeRoutes.get('/:userId', requireAuth, RecipeController.getAllRecipesByUserId);
    recipeRoutes.post('/recipe/delete', requireAuth, RecipeController.deleteRecipe);
+   recipeRoutes.post('/recipe/like/add', requireAuth, RecipeController.addLikeRecipe);
+   recipeRoutes.post('/recipe/like/remove', requireAuth, RecipeController.removeLikeRecipe);
+   recipeRoutes.get('/recipe/like/:userId/:recipeId', requireAuth, RecipeController.retrieveLikeRecipe);
+   recipeRoutes.get('/recipe/liked/:userId', requireAuth, RecipeController.getAllRecipesLikeByUserId);
+   recipeRoutes.post('/recipe/create/new', requireAuth, RecipeController.createNewRecipe);
+   recipeRoutes.post('/recipe/update/title', requireAuth, RecipeController.updateTitleRecipe);
+   recipeRoutes.post('/recipe/update/website', requireAuth, RecipeController.updateWebsiteRecipe);
+   recipeRoutes.post('/recipe/update/ingredient', requireAuth, RecipeController.updateIngredientRecipe);
+   recipeRoutes.post('/recipe/update/media', requireAuth, RecipeController.updateImageRecipe);
+   recipeRoutes.post('/recipe/update/media/delete', requireAuth, RecipeController.deleteImageRecipe);
+   recipeRoutes.post('/recipe/update/media/main-position', requireAuth, RecipeController.positionImageRecipe);
+   recipeRoutes.post('/recipe/update/tags', requireAuth, RecipeController.updateTagsRecipe);
+   recipeRoutes.post('/recipe/update/statut', requireAuth, RecipeController.updateStatutRecipe);
+
 
 
     //= ========================
@@ -119,6 +133,7 @@ module.exports = function (app) {
 
     tagRoutes.get('/:lng', requireAuth, TagController.getAllTags);
     tagRoutes.get('/suggest/:lng', requireAuth, TagController.getAllTagsSuggest);
+    tagRoutes.get('/autocomplete/list/:lng', requireAuth, TagController.getAllTagsForListAutoComplete);
     tagRoutes.get('/autocomplete/:lng/:name', requireAuth, TagController.getAllTagsAutoComplete);
 
 
