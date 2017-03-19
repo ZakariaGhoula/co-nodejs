@@ -73,5 +73,32 @@ exports.getAllTagsAutoComplete = function (req, res, next) {
         }
     );
 
+};exports.getAllTagsForListAutoComplete = function (req, res, next) {
+    if (!req.params.lng) {
+        return res.status(500).json({error: "lng is required."});
+    }
+
+
+    Tag.find({is_active: true,lng: req.params.lng,suggest: false, is_active: true}, {
+            name: 1,
+            lng: 1,
+            is_active: 1,
+            suggest: 1,
+        }, function (err, tags) {
+            if (err) {
+                console.log(err);
+                res.status(500).send({error: err});
+                return next(err);
+            }
+
+            return res.status(200).json({tags: tags});
+        }
+    );
+
 };
 
+exports.getAllRecipesByUserId = function (req, res, next) {
+    console.log(req);
+    const userId = req.params.userId;
+    return res.status(200).json({tags: "dd"});
+}
