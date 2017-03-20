@@ -560,3 +560,149 @@ function decodeBase64Image(dataString) {
 
     return response;
 }
+
+
+exports.reqAllUserAutoComplete = function (req, res, next) {
+
+    if (!req.params.query) {
+        console.log(err);
+        res.status(500).send({error: err});
+        return next(err);
+    }
+    if (!req.params.userId) {
+        console.log(err);
+        res.status(500).send({error: err});
+        return next(err);
+    }
+    User.aggregate([{
+            $match: {
+                $and: [{"_id": {$ne: mongoose.Types.ObjectId(req.params.userId)}},
+                    {$or: [{'profile.lastName': {$regex: new RegExp(req.params.query, "ig")}}, {'profile.firstName': {$regex: new RegExp(req.params.query, "ig")}}]}
+                ]
+            }
+        },
+            {
+                $lookup: {
+                    from: "networks",
+                    localField: "_id",
+                    foreignField: "guest",
+                    as: "user_guest"
+                }
+            }, {$unwind: '$user_guest'}, {
+                $lookup: {
+                    from: "users",
+                    localField: "user_guest.host",
+                    foreignField: "_id",
+                    as: "guests"
+                }
+            }, {
+                "$project": {
+                    "id": 1,
+                    email: "$email",
+                    profile: "$profile",
+                    provider: "$provider",
+                    role: "$role",
+                    config: "$config",
+                    media: "$media",
+                    "guests": {
+                        _id: 1,
+                        email: 1,
+                        profile: 1,
+                        media: 1,
+
+                    }
+                }
+            }, {
+                $lookup: {
+                    from: "networks",
+                    localField: "_id",
+                    foreignField: "host",
+                    as: "user_host"
+                }
+            }, {$unwind: '$user_host'}, {
+                $lookup: {
+                    from: "users",
+                    localField: "user_host.guest",
+                    foreignField: "_id",
+                    as: "hosts"
+                }
+            }, {
+                "$project": {
+                    "id": 1,
+                    email: "$email",
+                    profile: "$profile",
+                    provider: "$provider",
+                    role: "$role",
+                    config: "$config",
+                    media: "$media",
+                    "guests": {
+                        _id: 1,
+                        email: 1,
+                        profile: 1,
+                        media: 1,
+
+                    }, "hosts": {
+                        _id: 1,
+                        email: 1,
+                        profile: 1,
+                        media: 1,
+
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        'id': '$_id',
+                        email: "$email",
+                        followed: "false",
+                        abo: "false",
+                        profile: "$profile",
+                        provider: "$provider",
+                        role: "$role",
+                        config: "$config",
+                        media: "$media"
+                    },
+                    follow: {$addToSet: '$guests'}, hosts: {$addToSet: '$hosts'}
+                }
+            }
+
+        ],
+        function (err, user) {
+            if (err) {
+                console.log(err);
+                res.status(500).send({error: err});
+                return next(err);
+            }
+
+            var final = [];
+
+            for (var j in user) {
+                var host = false;
+                var follow = false;
+                for (var j2 in user[j].hosts) {
+                    if (typeof user[j].hosts[j2][0] !== "undefined") {
+                        if (user[j].hosts[j2][0]._id == req.params.userId) {
+                            follow = true;
+
+                        }
+                    }
+                }
+                for (var j2 in user[j].follow) {
+                    if (typeof user[j].follow[j2][0] !== "undefined") {
+                        if (user[j].follow[j2][0]._id == req.params.userId) {
+                            host = true;
+
+                        }
+                    }
+                }
+                user[j]._id.followed = host;
+                user[j]._id.abo = follow;
+
+                final.push(user[j]);
+            }
+            return next({users: final});
+        }
+    );
+
+};

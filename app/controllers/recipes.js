@@ -14,7 +14,8 @@ var imagemin = require('image-min');
 var path = require('path');
 var mkdirp = require('mkdirp');
 var moment = require('moment');
-
+var path = require('path');
+var ncp = require('ncp').ncp;
 
 // get ALL tags by lng
 exports.getTraitementRecipe = function (req, res, next) {
@@ -251,11 +252,11 @@ var retieveAllRecipesByUserId = function (req, res, next) {
                         }
                     }
                 }
-            ,{
-            $sort: {
-                'date_created':  -1
-            }
-            }
+                , {
+                    $sort: {
+                        'date_created': -1
+                    }
+                }
             ], function
                 (err, recipe) {
                 if (err) {
@@ -271,6 +272,165 @@ var retieveAllRecipesByUserId = function (req, res, next) {
     }
     ;
 exports.getAllRecipesByUserId = retieveAllRecipesByUserId;
+
+var retieveAllRecipesAutoComplete = function (req, res, next) {
+
+        const userId = req.params.userId;
+
+
+        Recipe.aggregate([{"$match": {$or: [{"title": {$regex: new RegExp(req.params.query, "ig")}}, {'content': {$regex: new RegExp(req.params.query, "ig")}}, {'ingredient': {$regex: new RegExp(req.params.query, "ig")}}]}}, {"$sort": {'date_created': 1}},
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "id_owner",
+                        foreignField: "_id",
+                        as: "user_owner"
+                    }
+                }, {$unwind: "$user_owner"},
+                {
+                    "$project": {
+                        "id": 1,
+                        title: "$title",
+                        id_user: "$id_user",
+                        id_owner: "$id_owner",
+                        date_created: "$date_created",
+                        tags: "$tags",
+                        media: "$media",
+                        in_slider: "$in_slider",
+                        activated: "$activated",
+                        private: "$private",
+                        website: "$website",
+                        content: "$content",
+                        ingredient: "$ingredient",
+                        "user_owner": {
+                            _id: 1,
+                            email: 1,
+                            profile: 1,
+                            media: 1,
+
+                        },
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            'id': '$_id',
+                            title: "$title",
+                            id_user: "$id_user",
+                            id_owner: "$id_owner",
+                            date_created: "$date_created",
+                            tags: "$tags",
+                            media: "$media",
+                            in_slider: "$in_slider",
+                            activated: "$activated",
+                            private: "$private",
+                            website: "$website",
+                            content: "$content",
+                            ingredient: "$ingredient",
+                            media: "$media",
+                            user_owner: "$user_owner"
+                        }
+                    }
+                }
+                , {
+                    $sort: {
+                        'date_created': -1
+                    }
+                }
+            ], function
+                (err, recipe) {
+                if (err) {
+                    console.log(err);
+                    res.status(500).send({error: err});
+                    return next(err);
+                }
+                return next({recipes: recipe, count_recipes: recipe.length});
+            }
+        )
+        ;
+
+    }
+    ;
+exports.retieveAllRecipesAutoComplete = retieveAllRecipesAutoComplete;
+var retieveAllRecipesAutoCompleteTags = function (req, res, next) {
+
+        const userId = req.params.userId;
+
+
+        Recipe.aggregate([{"$match": {"tags.value": {$regex: new RegExp(req.params.query, "ig")}}}, {"$sort": {'date_created': 1}},
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "id_owner",
+                        foreignField: "_id",
+                        as: "user_owner"
+                    }
+                }, {$unwind: "$user_owner"},
+                {
+                    "$project": {
+                        "id": 1,
+                        title: "$title",
+                        id_user: "$id_user",
+                        id_owner: "$id_owner",
+                        date_created: "$date_created",
+                        tags: "$tags",
+                        media: "$media",
+                        in_slider: "$in_slider",
+                        activated: "$activated",
+                        private: "$private",
+                        website: "$website",
+                        content: "$content",
+                        ingredient: "$ingredient",
+                        "user_owner": {
+                            _id: 1,
+                            email: 1,
+                            profile: 1,
+                            media: 1,
+
+                        },
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            'id': '$_id',
+                            title: "$title",
+                            id_user: "$id_user",
+                            id_owner: "$id_owner",
+                            date_created: "$date_created",
+                            tags: "$tags",
+                            media: "$media",
+                            in_slider: "$in_slider",
+                            activated: "$activated",
+                            private: "$private",
+                            website: "$website",
+                            content: "$content",
+                            ingredient: "$ingredient",
+                            media: "$media",
+                            user_owner: "$user_owner"
+                        }
+                    }
+                }
+                , {
+                    $sort: {
+                        'date_created': -1
+                    }
+                }
+            ], function
+                (err, recipe) {
+                if (err) {
+                    console.log(err);
+                    res.status(500).send({error: err});
+                    return next(err);
+                }
+                return next({recipes: recipe, count_recipes: recipe.length});
+            }
+        )
+        ;
+
+    }
+    ;
+exports.retieveAllRecipesAutoCompleteTags = retieveAllRecipesAutoCompleteTags;
 
 var retieveAllRecipesLikedByUserId = function (req, res, next) {
 
@@ -370,13 +530,15 @@ var deleteRecipe = function (req, res, next) {
                     NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
                         NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
                             retieveAllRecipesByUserId(req, res, function (recipes) {
+                                retieveAllRecipesLikedByUserId(req, res, function (recipes_liked) {
 
-
-                                const userToReturn = setUserInfo(user);
-                                return res.status(200).json({
-                                    user: userToReturn,
-                                    recipes: recipes,
-                                    network: {abos, follow}
+                                    const userToReturn = setUserInfo(user);
+                                    return res.status(200).json({
+                                        user: userToReturn,
+                                        recipes: recipes,
+                                        recipes_liked: recipes_liked,
+                                        network: {abos, follow}
+                                    });
                                 });
                             });
 
@@ -860,14 +1022,11 @@ var updateStatutRecipe = function (req, res, nex) {
     const userId = req.body.userId;
     const is_private = req.body.is_private;
     const recipeId = req.body.recipeId;
-    console.log(req.body)
+
     if (!req.body.userId) {
         return res.status(500).json({error: "id_user  is required."});
     }
-    if (!req.body.is_private) {
 
-        return res.status(500).json({error: "is_private  is required."});
-    }
     req.params = {};
     req.params.userId = userId;
 
@@ -896,3 +1055,106 @@ var updateStatutRecipe = function (req, res, nex) {
 
 }
 exports.updateStatutRecipe = updateStatutRecipe;
+
+var addFromExistRecipe = function (req, res, nex) {
+
+
+    const userId = req.body.userId;
+
+    const recipeId = req.body.recipeId;
+    console.log(req.body)
+    if (!req.body.userId) {
+        return res.status(500).json({error: "id_user  is required."});
+    }
+
+    req.params = {};
+    req.params.userId = userId;
+
+    Recipe.findOne({"_id": mongoose.Types.ObjectId(recipeId)}, function (err2, data2) {
+        if (err2) {
+            return res.status(500).json({error: 'Something went wrong, please try later.'});
+            // req.session.historyData.message = 'Something went wrong, please try later.'
+        }
+
+        var new_recipe = new Recipe();
+
+        new_recipe.id_user = mongoose.Types.ObjectId(userId);
+        new_recipe.id_owner = mongoose.Types.ObjectId(data2.id_owner);
+        new_recipe.title = data2.title;
+        new_recipe.website = data2.website;
+        new_recipe.content = data2.content;
+        new_recipe.ingredient = data2.ingredient;
+        new_recipe.private = true;
+        new_recipe.activated = true;
+        new_recipe.tags = data2.tags;
+        new_recipe.date_created = moment().format("YYYY-MM-DD HH:mm:ss");
+
+        var list_media = data2.media;
+        var new_list_media = [];
+        if (data2.media.length > 0) {
+            var current_Date = new Date();
+            var folder = 'recipe_' + current_Date.getTime();
+
+
+            mkdirp("public/recipes/photo/" + folder, function (err, r) {
+
+            }, new_recipe);
+            for (var i in data2.media) {
+                if (typeof data2.media[i].folder !== "undefined") {
+                    var obj = {'folder': folder, "value": list_media[i].value};
+                    var path = data2.media[i].folder
+                    ncp("public/recipes/photo/" + data2.media[i].folder, "public/recipes/photo/" + folder, function (err) {
+                        if (err) {
+
+                            return console.error(err);
+
+                        }
+                    });
+                    new_list_media.push(obj);
+                    new_recipe.media.push(obj)
+
+
+                }
+            }
+
+
+        }
+
+
+        new_recipe.save(function (errs, d) {
+            if (errs) {
+                return res.status(500).json({error: 'Something went wrong, please try later.'});
+            }
+            User.findById(userId, (err, user) => {
+                if (err) {
+                    res.status(400).json({error: 'No user could be found for this ID.'});
+                    return next(err);
+                }
+                req.params = {};
+                req.params.userId = userId;
+                NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                    NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                        retieveAllRecipesByUserId(req, res, function (recipes) {
+                            retieveAllRecipesLikedByUserId(req, res, function (recipes_liked) {
+
+                                const userToReturn = setUserInfo(user);
+                                return res.status(200).json({
+                                    user: userToReturn,
+                                    recipes: recipes,
+                                    recipes_liked: recipes_liked,
+                                    network: {abos, follow}
+                                });
+                            });
+                        });
+
+                    });
+
+                })
+            });
+
+        })
+    });
+
+
+}
+exports.addFromExistRecipe = addFromExistRecipe;

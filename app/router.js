@@ -4,6 +4,7 @@ const SeasonalProductController = require('./controllers/seasonal_product');
 const TagController = require('./controllers/tag');
 const NetworkController = require('./controllers/network');
 const RecipeController = require('./controllers/recipes');
+const SearchController = require('./controllers/search');
 const express = require('express');
 const passport = require('passport');
 const ROLE_USER = require('./constants').ROLE_USER;
@@ -24,6 +25,7 @@ module.exports = function (app) {
         networkRoutes = express.Router(),
         seasonalProductRoutes = express.Router(),
         tagRoutes = express.Router(),
+        searchRoutes = express.Router(),
         recipeRoutes = express.Router();
 
     //= ========================
@@ -57,6 +59,7 @@ module.exports = function (app) {
     // View user profile route
     userRoutes.get('/:userId', requireAuth, UserController.viewProfile);
     userRoutes.get('/external/:userId', requireAuth, UserController.viewExternalProfile);
+
    // userRoutes.get('/thumb/:userId', requireAuth, UserController.thumbImg);
 
     userRoutes.post('/media/update', requireAuth, UserController.updateMedia);
@@ -103,9 +106,10 @@ module.exports = function (app) {
    recipeRoutes.post('/recipe/update/statut', requireAuth, RecipeController.updateStatutRecipe);
 
 
+    recipeRoutes.post('/recipe/create/exist', requireAuth, RecipeController.addFromExistRecipe);
 
     //= ========================
-    // Seasonal product Routes
+    // network product Routes
     //= ========================
 
     apiRoutes.use('/network', networkRoutes);
@@ -123,6 +127,14 @@ module.exports = function (app) {
 
     seasonalProductRoutes.get('/:lng', requireAuth, SeasonalProductController.getAllSeasonalProducts);
     seasonalProductRoutes.get('/:lng/:season', requireAuth, SeasonalProductController.getSeasonalProducts);
+
+     //= ========================
+    // search   Routes
+    //= ========================
+
+    apiRoutes.use('/search', searchRoutes);
+
+    searchRoutes.get('/:lng/:userId/:query', requireAuth, SearchController.getSearch);
 
 
     // = ========================
