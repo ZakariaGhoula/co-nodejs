@@ -215,6 +215,7 @@ var retieveAllRecipesByUserId = function (req, res, next) {
                     as: "user_poster"
                 }
             }, {$unwind: "$user_poster"},
+<<<<<<< HEAD
                 {
                     "$project": {
                         "id": 1,
@@ -317,6 +318,8 @@ var retieveAllRecipesAutoComplete = function (req, res, next) {
 =======
                 }, {$unwind: "$user_owner"},
 >>>>>>> origin/master
+=======
+>>>>>>> origin/master
                 {
                     "$project": {
                         "id": 1,
@@ -339,12 +342,18 @@ var retieveAllRecipesAutoComplete = function (req, res, next) {
                             media: 1,
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> origin/master
                         }, "user_poster": {
                             _id: 1,
                             email: 1,
                             profile: 1,
                             media: 1,
 
+<<<<<<< HEAD
+=======
+>>>>>>> origin/master
 =======
 >>>>>>> origin/master
                         },
@@ -368,10 +377,15 @@ var retieveAllRecipesAutoComplete = function (req, res, next) {
                             ingredient: "$ingredient",
                             media: "$media",
 <<<<<<< HEAD
+<<<<<<< HEAD
                             user_owner: "$user_owner",
                             user_poster: "$user_poster"
 =======
                             user_owner: "$user_owner"
+>>>>>>> origin/master
+=======
+                            user_owner: "$user_owner",
+                            user_poster: "$user_poster",
 >>>>>>> origin/master
                         }
                     }
@@ -389,6 +403,103 @@ var retieveAllRecipesAutoComplete = function (req, res, next) {
                     return next(err);
                 }
                 return next({recipes: recipe, count_recipes: recipe.length});
+<<<<<<< HEAD
+=======
+            }
+        )
+        ;
+
+    }
+    ;
+exports.getAllRecipesByUserId = retieveAllRecipesByUserId;
+
+var retieveAllRecipesAutoComplete = function (req, res, next) {
+
+        const userId = req.params.userId;
+
+
+        Recipe.aggregate([{"$match": {$or: [{"title": {$regex: new RegExp(req.params.query, "ig")}}, {'content': {$regex: new RegExp(req.params.query, "ig")}}, {'ingredient': {$regex: new RegExp(req.params.query, "ig")}}]}}, {"$sort": {'title': -1}},
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "id_owner",
+                        foreignField: "_id",
+                        as: "user_owner"
+                    }
+                }, {$unwind: "$user_owner"},{
+                $lookup: {
+                    from: "users",
+                    localField: "id_user",
+                    foreignField: "_id",
+                    as: "user_poster"
+                }
+            }, {$unwind: "$user_poster"},
+                {
+                    "$project": {
+                        "id": 1,
+                        title: "$title",
+                        id_user: "$id_user",
+                        id_owner: "$id_owner",
+                        date_created: "$date_created",
+                        tags: "$tags",
+                        media: "$media",
+                        in_slider: "$in_slider",
+                        activated: "$activated",
+                        private: "$private",
+                        website: "$website",
+                        content: "$content",
+                        ingredient: "$ingredient",
+                        "user_owner": {
+                            _id: 1,
+                            email: 1,
+                            profile: 1,
+                            media: 1,
+
+                        }, "user_poster": {
+                            _id: 1,
+                            email: 1,
+                            profile: 1,
+                            media: 1,
+
+                        },
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            'id': '$_id',
+                            title: "$title",
+                            id_user: "$id_user",
+                            id_owner: "$id_owner",
+                            date_created: "$date_created",
+                            tags: "$tags",
+                            media: "$media",
+                            in_slider: "$in_slider",
+                            activated: "$activated",
+                            private: "$private",
+                            website: "$website",
+                            content: "$content",
+                            ingredient: "$ingredient",
+                            media: "$media",
+                            user_owner: "$user_owner",
+                            user_poster: "$user_poster"
+                        }
+                    }
+                }
+                , {
+                    $sort: {
+                        'date_created': -1
+                    }
+                }
+            ], function
+                (err, recipe) {
+                if (err) {
+                    console.log(err);
+                    res.status(500).send({error: err});
+                    return next(err);
+                }
+                return next({recipes: recipe, count_recipes: recipe.length});
+>>>>>>> origin/master
             }
         )
         ;
@@ -402,9 +513,13 @@ var retieveAllRecipesAutoCompleteTags = function (req, res, next) {
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         Recipe.aggregate([{"$match": {"tags.value": {$regex: new RegExp(req.params.query, "ig")}}}, {"$sort": {'title': -1}},
 =======
         Recipe.aggregate([{"$match": {"tags.value": {$regex: new RegExp(req.params.query, "ig")}}}, {"$sort": {'date_created': 1}},
+>>>>>>> origin/master
+=======
+        Recipe.aggregate([{"$match": {"tags.value": {$regex: new RegExp(req.params.query, "ig")}}}, {"$sort": {'title': -1}},
 >>>>>>> origin/master
                 {
                     $lookup: {
@@ -438,6 +553,9 @@ var retieveAllRecipesAutoCompleteTags = function (req, res, next) {
                         },
                     }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> origin/master
                 }, {
                     $lookup: {
                         from: "users",
@@ -475,6 +593,9 @@ var retieveAllRecipesAutoCompleteTags = function (req, res, next) {
 
                         },
                     }
+<<<<<<< HEAD
+=======
+>>>>>>> origin/master
 =======
 >>>>>>> origin/master
                 },
@@ -496,10 +617,15 @@ var retieveAllRecipesAutoCompleteTags = function (req, res, next) {
                             ingredient: "$ingredient",
                             media: "$media",
 <<<<<<< HEAD
+<<<<<<< HEAD
                             user_owner: "$user_owner",
                             user_poster: "$user_poster"
 =======
                             user_owner: "$user_owner"
+>>>>>>> origin/master
+=======
+                            user_owner: "$user_owner",
+                            user_poster: "$user_poster"
 >>>>>>> origin/master
                         }
                     }

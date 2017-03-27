@@ -6,8 +6,14 @@ const NetworkController = require('./controllers/network');
 const RecipeController = require('./controllers/recipes');
 const SearchController = require('./controllers/search');
 <<<<<<< HEAD
+<<<<<<< HEAD
 const NewsfeedController = require('./controllers/newsfeed');
 =======
+>>>>>>> origin/master
+=======
+
+const NewsfeedController = require('./controllers/newsfeed');
+
 >>>>>>> origin/master
 const express = require('express');
 const passport = require('passport');
@@ -31,8 +37,15 @@ module.exports = function (app) {
         tagRoutes = express.Router(),
         searchRoutes = express.Router(),
 <<<<<<< HEAD
+<<<<<<< HEAD
         newsfeedRoutes = express.Router(),
 =======
+>>>>>>> origin/master
+=======
+
+        newsfeedRoutes = express.Router(),
+        chatRoutes = express.Router(),
+
 >>>>>>> origin/master
         recipeRoutes = express.Router();
 
@@ -75,11 +88,19 @@ module.exports = function (app) {
     userRoutes.get('/:userId', requireAuth, UserController.viewProfile);
     userRoutes.get('/external/:userId', requireAuth, UserController.viewExternalProfile);
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+
+>>>>>>> origin/master
 
    // userRoutes.get('/thumb/:userId', requireAuth, UserController.thumbImg);
 >>>>>>> origin/master
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/master
     // userRoutes.get('/thumb/:userId', requireAuth, UserController.thumbImg);
 
     userRoutes.post('/skipform', requireAuth, UserController.updateSkipForm);
@@ -111,6 +132,10 @@ module.exports = function (app) {
 
     recipeRoutes.get('/traite', requireAuth, RecipeController.getTraitementRecipe);
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/master
     recipeRoutes.get('/:userId', requireAuth, RecipeController.getAllRecipesByUserId);
     recipeRoutes.post('/recipe/delete', requireAuth, RecipeController.deleteRecipe);
     recipeRoutes.post('/recipe/like/add', requireAuth, RecipeController.addLikeRecipe);
@@ -125,8 +150,12 @@ module.exports = function (app) {
     recipeRoutes.post('/recipe/update/media/delete', requireAuth, RecipeController.deleteImageRecipe);
     recipeRoutes.post('/recipe/update/media/main-position', requireAuth, RecipeController.positionImageRecipe);
     recipeRoutes.post('/recipe/update/tags', requireAuth, RecipeController.updateTagsRecipe);
+<<<<<<< HEAD
     recipeRoutes.post('/recipe/update/statut', requireAuth, RecipeController.updateStatutRecipe);
 =======
+=======
+
+>>>>>>> origin/master
    recipeRoutes.get('/:userId', requireAuth, RecipeController.getAllRecipesByUserId);
    recipeRoutes.post('/recipe/delete', requireAuth, RecipeController.deleteRecipe);
    recipeRoutes.post('/recipe/like/add', requireAuth, RecipeController.addLikeRecipe);
@@ -144,6 +173,8 @@ module.exports = function (app) {
    recipeRoutes.post('/recipe/update/statut', requireAuth, RecipeController.updateStatutRecipe);
 >>>>>>> origin/master
 
+
+    recipeRoutes.post('/recipe/create/exist', requireAuth, RecipeController.addFromExistRecipe);
 
     recipeRoutes.post('/recipe/create/exist', requireAuth, RecipeController.addFromExistRecipe);
 
@@ -191,6 +222,28 @@ module.exports = function (app) {
 
     searchRoutes.get('/:lng/:userId/:query', requireAuth, SearchController.getSearch);
 >>>>>>> origin/master
+
+
+    // search   Routes
+    //= ========================
+
+    apiRoutes.use('/search', searchRoutes);
+
+    searchRoutes.get('/:lng/:userId/:query', requireAuth, SearchController.getSearch);
+
+    //= ========================
+    // newsfedd   Routes
+    //= ========================
+
+    apiRoutes.use('/newsfeed', newsfeedRoutes);
+    newsfeedRoutes.get('/:lng/:userId/:offset/:limit', requireAuth, NewsfeedController.getMyNewsfeeds);
+    newsfeedRoutes.get('/slider/:lng/:userId', requireAuth, NewsfeedController.getSliderExplorer);
+    newsfeedRoutes.get('/explorer/:lng/:userId/:offset/:limit', requireAuth, NewsfeedController.getNewsfeedsExplorer);
+
+
+
+    searchRoutes.get('/:lng/:userId/:query', requireAuth, SearchController.getSearch);
+
 
 
     // = ========================

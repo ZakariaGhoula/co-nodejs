@@ -184,10 +184,17 @@ exports.updateSkipForm = function (req, res, next) {
 
 
     User.findById(userId, (err1, user1) => {
+<<<<<<< HEAD
             if (err1) {
                 res.status(400).json({error: 'No user could be found for this ID.'});
                 return next(err);
             }
+=======
+        if (err1) {
+            res.status(400).json({error: 'No user could be found for this ID.'});
+            return next(err);
+        }
+>>>>>>> origin/master
 
         var profile = user1.profile;
         var config = user1.config;
@@ -197,6 +204,7 @@ exports.updateSkipForm = function (req, res, next) {
 
         config.form_skiped = true;
         config.code_promo = req.body.body;
+<<<<<<< HEAD
             User.update(
                 {_id: userId},
                 {
@@ -236,6 +244,47 @@ exports.updateSkipForm = function (req, res, next) {
                     });
                 });
         });
+=======
+        User.update(
+            {_id: userId},
+            {
+                $set: {
+                    profile: profile,
+                    config: config,
+
+                }
+            }, function (err2, data) {
+                if (err2) {
+                    return res.status(500).json({error: 'Something went wrong, please try later.'});
+                    // req.session.historyData.message = 'Something went wrong, please try later.'
+                }
+                User.findById(userId, (err, user) => {
+                    if (err) {
+                        res.status(400).json({error: 'No user could be found for this ID.'});
+                        return next(err);
+                    }
+                    req.params = {};
+                    req.params.userId = userId;
+                    NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                        NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                            RecipeController.getAllRecipesByUserId(req, res, function (recipes) {
+
+
+                                const userToReturn = setUserInfo(user);
+                                return res.status(200).json({
+                                    user: userToReturn,
+                                    recipes: recipes,
+                                    network: {abos, follow}
+                                });
+                            });
+
+                        });
+
+                    })
+                });
+            });
+    });
+>>>>>>> origin/master
 
 };//--- update profile
 
@@ -677,6 +726,7 @@ function decodeBase64Image(dataString) {
     return response;
 }
 
+<<<<<<< HEAD
 
 exports.reqAllUserAutoComplete = function (req, res, next) {
 
@@ -892,3 +942,5 @@ exports.reqAllUserAutoComplete = function (req, res, next) {
 >>>>>>> origin/master
 
 };
+=======
+>>>>>>> origin/master
