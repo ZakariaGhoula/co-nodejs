@@ -9,6 +9,7 @@ const getRole = require('../helpers').getRole;
 const config = require('../config/main');
 
 const NetworkController = require('./network');
+const RecipeController = require('./recipes');
 // Generate JWT
 // TO-DO Add issuer and audience
 function generateToken(user) {
@@ -17,16 +18,200 @@ function generateToken(user) {
     });
 }
 
+const writeImgToPath = require('../helpers').writeImgToPath;
 //= =======================================
 // Login Route
 //= =======================================
 exports.login = function (req, res, next) {
     const userInfo = setUserInfo(req.user);
+    req.params = {};
+    req.params.userId = req.user._id;
+    NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+        NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+            RecipeController.getAllRecipesByUserId(req, res, function (recipes) {
+                RecipeController.getAllRecipesLikeByUserId(req, res, function (recipes_liked) {
 
-    res.status(200).json({
-        token: `JWT ${generateToken(userInfo)}`,
-        user: userInfo
-    });
+                    res.status(200).json({
+                        token: `JWT ${generateToken(userInfo)}`,
+                        user: userInfo,
+                        recipes: recipes,
+                        recipes_liked: recipes_liked,
+                        network: {abos, follow}
+                    });
+                });
+            });
+        });
+
+    })
+
+    /*res.status(200).json({
+     token: `JWT ${generateToken(userInfo)}`,
+     user: userInfo
+     });*/
+};
+//= =======================================
+// Login token
+//= =======================================
+exports.relogin = function (req, res, next) {
+
+
+    if (!req.user) {
+        return res.status(422).send({error: 'JWT invalid'});
+    }
+    const userInfo = setUserInfo(req.user);
+
+    req.params = {};
+    req.params.userId = req.user._id;
+    NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+        NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+            RecipeController.getAllRecipesByUserId(req, res, function (recipes) {
+                RecipeController.getAllRecipesLikeByUserId(req, res, function (recipes_liked) {
+
+                    res.status(200).json({
+                        token: `JWT ${generateToken(userInfo)}`,
+                        user: userInfo,
+                        recipes: recipes,
+                        recipes_liked: recipes_liked,
+                        network: {abos, follow}
+                    });
+                });
+            });
+        });
+
+    })
+
+
+};
+
+//= =======================================
+// facebook token
+//= =======================================
+exports.facebook = function (req, res, next) {
+    var date_now = new Date();
+    const email = req.body.email;
+    const firstName = req.body.first_name;
+    const lastName = req.body.last_name;
+    const password = req.body.email + date_now.getTime();
+
+    // Return error if no email provided
+    if (!email) {
+        return res.status(422).send({error: 'You must enter an email address.'});
+    }
+
+    // Return error if full name not provided
+    if (!firstName || !lastName) {
+        return res.status(422).send({error: 'You must enter your full name.'});
+    }
+
+    // Return error if no password provided
+    if (!password) {
+        return res.status(422).send({error: 'You must enter a password.'});
+    }
+
+    User.findOne({email}, (err, existingUser) => {
+
+            if (err) {
+                return next(err);
+            }
+
+            // If user is not unique, return error
+            if (existingUser) {
+                var userId = existingUser._id;
+                User.update(
+                    {_id: userId},
+                    {
+                        $set: {
+                            provider: {'name': "facebook", 'uid': req.body.uid},
+
+
+                        }
+                    }, function (err2, data) {
+                        if (err2) {
+                            return res.status(500).json({error: 'Something went wrong, please try later.'});
+                            // req.session.historyData.message = 'Something went wrong, please try later.'
+                        }
+                        User.findById(userId, (err, user) => {
+                            if (err) {
+                                res.status(400).json({error: 'No user could be found for this ID.'});
+                                return next(err);
+                            }
+                            req.params = {};
+                            req.params.userId = user._id;
+                            const userInfo = setUserInfo(user);
+                            NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                                NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                                    RecipeController.getAllRecipesByUserId(req, res, function (recipes) {
+                                        RecipeController.getAllRecipesLikeByUserId(req, res, function (recipes_liked) {
+
+                                            res.status(201).json({
+                                                token: `JWT ${generateToken(userInfo)}`,
+                                                user: userInfo,
+                                                recipes: recipes,
+                                                recipes_liked: recipes_liked,
+                                                network: {abos, follow}
+                                            });
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+            }
+            else {
+
+
+
+                ///--- media
+                var file_name = 'avatar-' + date_now.getTime() + '-' + req.body.uid + '.jpg';
+
+                var img = req.body.picture;
+                var b64 = writeImgToPath("public/users/photo/" + file_name, img);
+                var obj_media = {type: "photo", path: file_name, name: file_name};
+
+
+                const user = new User({
+                    email,
+                    password,
+                    profile: {firstName, lastName},
+                    provider: {'name': "facebook", 'uid': req.body.uid},
+                    media: obj_media
+                });
+
+                user.save((err, user) => {
+                    if (err) {
+                        return next(err);
+                    }
+
+                    // Subscribe member to Mailchimp list
+                    // mailchimp.subscribeToNewsletter(user.email);
+
+                    // Respond with JWT if user was created
+                    req.params = {};
+                    req.params.userId = user._id;
+                    const userInfo = setUserInfo(user);
+                    NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                        NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                            RecipeController.getAllRecipesByUserId(req, res, function (recipes) {
+                                RecipeController.getAllRecipesLikeByUserId(req, res, function (recipes_liked) {
+
+                                    res.status(201).json({
+                                        token: `JWT ${generateToken(userInfo)}`,
+                                        user: userInfo,
+                                        recipes: recipes,
+                                        recipes_liked: recipes_liked,
+                                        network: {abos, follow}
+                                    });
+                                });
+                            });
+                        });
+                    });
+
+                });
+            }
+        }
+    );
+
+
 };
 
 
@@ -84,11 +269,27 @@ exports.register = function (req, res, next) {
             // Respond with JWT if user was created
 
             const userInfo = setUserInfo(user);
+            NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                    RecipeController.getAllRecipesByUserId(req, res, function (recipes) {
+                        RecipeController.getAllRecipesLikeByUserId(req, res, function (recipes_liked) {
 
-            res.status(201).json({
-                token: `JWT ${generateToken(userInfo)}`,
-                user: userInfo
+                            res.status(201).json({
+                                token: `JWT ${generateToken(userInfo)}`,
+                                user: userInfo,
+                                recipes: recipes,
+                                recipes_liked: recipes_liked,
+                                network: {abos, follow}
+                            });
+                        });
+                    });
+                });
             });
+
+            /*  res.status(201).json({
+             token: `JWT ${generateToken(userInfo)}`,
+             user: userInfo
+             });*/
         });
     });
 
@@ -173,7 +374,10 @@ exports.forgotPassword = function (req, res, next) {
 //= =======================================
 
 exports.verifyToken = function (req, res, next) {
-    User.findOne({resetPasswordToken: req.params.token, resetPasswordExpires: {$gt: Date.now()}}, (err, resetUser) => {
+    User.findOne({
+        resetPasswordToken: req.params.token,
+        resetPasswordExpires: {$gt: Date.now()}
+    }, (err, resetUser) => {
         // If query returned no results, token expired or was invalid. Return error.
         if (!resetUser) {
             res.status(422).json({error: 'Your token has expired. Please attempt to reset your password again.'});

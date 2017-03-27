@@ -54,7 +54,8 @@ const UserSchema = new Schema({
                 follow: {type: Boolean, default: true},
                 app: {type: Boolean, default: true}
             },
-            form_skiped: {type: Boolean, default: false}
+            form_skiped: {type: Boolean, default: false},
+            code_promo: {type: String, default: null}
         },
         activated: {
             type: Boolean,

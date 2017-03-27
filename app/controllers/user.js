@@ -6,9 +6,61 @@ const writeImgToPath = require('../helpers').writeImgToPath;
 var fs = require('fs');
 var mongoose = require('mongoose');
 var _ = require("lodash");
+
+
+//= =======================================
+// check email
+//= =======================================
+exports.emailExist = function (req, res, next) {
+    const email = req.params.email;
+    User.findOne({'email': email}, function (err, user) {
+        if (err) {
+            return res.status(200).json({exist: false})
+        }
+
+        var is_used = user !== null && typeof user.email !== "undefined" && user.email != "";
+
+        return res.status(200).json({exist: is_used})
+    })
+};
+
 //= =======================================
 // User Routes
 //= =======================================
+exports.myProfile = function (req, res, next) {
+    const userId = req.user._id
+
+    if (!req.user._id) {
+        return res.status(401).json({error: 'You are not authorized to view this user profile.'});
+    }
+    req.params = {};
+    req.params.userId = userId;
+    User.findById(req.user._id, (err, user) => {
+        if (err) {
+            res.status(400).json({error: 'No user could be found for this ID.'});
+            return next(err);
+        }
+        NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+            NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                RecipeController.getAllRecipesByUserId(req, res, function (recipes) {
+                    RecipeController.getAllRecipesLikeByUserId(req, res, function (recipes_liked) {
+
+                        const userToReturn = setUserInfo(user);
+                        return res.status(200).json({
+                            user: userToReturn,
+                            recipes: recipes,
+                            recipes_liked: recipes_liked,
+                            network: {abos, follow}
+                        });
+                    });
+                });
+            });
+
+        })
+
+
+    });
+};
 exports.viewProfile = function (req, res, next) {
     const userId = req.params.userId;
 
@@ -120,6 +172,70 @@ exports.updateProfile = function (req, res, next) {
             });
         }
     );
+
+};//--- update profile
+
+exports.updateSkipForm = function (req, res, next) {
+    const userId = req.body.userId;
+
+    if (req.user._id.toString() !== userId) {
+        return res.status(401).json({error: 'You are not authorized to view this user profile.'});
+    }
+
+
+    User.findById(userId, (err1, user1) => {
+            if (err1) {
+                res.status(400).json({error: 'No user could be found for this ID.'});
+                return next(err);
+            }
+
+        var profile = user1.profile;
+        var config = user1.config;
+        profile.gender = req.body.gender;
+        profile.level = req.body.level;
+        profile.rangeAge = req.body.age;
+
+        config.form_skiped = true;
+        config.code_promo = req.body.body;
+            User.update(
+                {_id: userId},
+                {
+                    $set: {
+                        profile: profile,
+                        config: config,
+
+                    }
+                }, function (err2, data) {
+                    if (err2) {
+                        return res.status(500).json({error: 'Something went wrong, please try later.'});
+                        // req.session.historyData.message = 'Something went wrong, please try later.'
+                    }
+                    User.findById(userId, (err, user) => {
+                        if (err) {
+                            res.status(400).json({error: 'No user could be found for this ID.'});
+                            return next(err);
+                        }
+                        req.params = {};
+                        req.params.userId = userId;
+                        NetworkController.retreiveAllNetworkHost(req, res, function (abos) {
+                            NetworkController.retrieveAllNetworkGuest(req, res, function (follow) {
+                                RecipeController.getAllRecipesByUserId(req, res, function (recipes) {
+
+
+                                    const userToReturn = setUserInfo(user);
+                                    return res.status(200).json({
+                                        user: userToReturn,
+                                        recipes: recipes,
+                                        network: {abos, follow}
+                                    });
+                                });
+
+                            });
+
+                        })
+                    });
+                });
+        });
 
 };//--- update profile
 
@@ -560,3 +676,219 @@ function decodeBase64Image(dataString) {
 
     return response;
 }
+
+
+exports.reqAllUserAutoComplete = function (req, res, next) {
+
+    if (!req.params.query) {
+        console.log(err);
+        res.status(500).send({error: err});
+        return next(err);
+    }
+    if (!req.params.userId) {
+        console.log(err);
+        res.status(500).send({error: err});
+        return next(err);
+    }
+    User.aggregate([{
+            $match: {
+                $and: [{"_id": {$ne: mongoose.Types.ObjectId(req.params.userId)}},
+                    {$or: [{'profile.lastName': {$regex: new RegExp(req.params.query, "ig")}}, {'profile.firstName': {$regex: new RegExp(req.params.query, "ig")}}]}
+                ]
+            }
+<<<<<<< HEAD
+        }, {$sort: {'profile.firstName': -1}},
+=======
+        },
+>>>>>>> origin/master
+            {
+                $lookup: {
+                    from: "networks",
+                    localField: "_id",
+                    foreignField: "guest",
+                    as: "user_guest"
+                }
+<<<<<<< HEAD
+            }
+            ,
+            {
+                $unwind: '$user_guest'
+            }
+            ,
+            {
+=======
+            }, {$unwind: '$user_guest'}, {
+>>>>>>> origin/master
+                $lookup: {
+                    from: "users",
+                    localField: "user_guest.host",
+                    foreignField: "_id",
+                    as: "guests"
+                }
+<<<<<<< HEAD
+            }
+            ,
+            {
+=======
+            }, {
+>>>>>>> origin/master
+                "$project": {
+                    "id": 1,
+                    email: "$email",
+                    profile: "$profile",
+                    provider: "$provider",
+                    role: "$role",
+                    config: "$config",
+                    media: "$media",
+                    "guests": {
+                        _id: 1,
+                        email: 1,
+                        profile: 1,
+                        media: 1,
+
+                    }
+                }
+<<<<<<< HEAD
+            }
+            ,
+            {
+=======
+            }, {
+>>>>>>> origin/master
+                $lookup: {
+                    from: "networks",
+                    localField: "_id",
+                    foreignField: "host",
+                    as: "user_host"
+                }
+<<<<<<< HEAD
+            }
+            ,
+            {
+                $unwind: '$user_host'
+            }
+            ,
+            {
+=======
+            }, {$unwind: '$user_host'}, {
+>>>>>>> origin/master
+                $lookup: {
+                    from: "users",
+                    localField: "user_host.guest",
+                    foreignField: "_id",
+                    as: "hosts"
+                }
+<<<<<<< HEAD
+            }
+            ,
+            {
+=======
+            }, {
+>>>>>>> origin/master
+                "$project": {
+                    "id": 1,
+                    email: "$email",
+                    profile: "$profile",
+                    provider: "$provider",
+                    role: "$role",
+                    config: "$config",
+                    media: "$media",
+                    "guests": {
+                        _id: 1,
+                        email: 1,
+                        profile: 1,
+                        media: 1,
+
+<<<<<<< HEAD
+                    }
+                    ,
+                    "hosts": {
+=======
+                    }, "hosts": {
+>>>>>>> origin/master
+                        _id: 1,
+                        email: 1,
+                        profile: 1,
+                        media: 1,
+
+                    }
+                }
+<<<<<<< HEAD
+            }
+            ,
+=======
+            },
+>>>>>>> origin/master
+            {
+                $group: {
+                    _id: {
+                        'id': '$_id',
+                        email: "$email",
+                        followed: "false",
+                        abo: "false",
+                        profile: "$profile",
+                        provider: "$provider",
+                        role: "$role",
+                        config: "$config",
+                        media: "$media"
+<<<<<<< HEAD
+                    }
+                    ,
+                    follow: {
+                        $addToSet: '$guests'
+                    }
+                    ,
+                    hosts: {
+                        $addToSet: '$hosts'
+                    }
+=======
+                    },
+                    follow: {$addToSet: '$guests'}, hosts: {$addToSet: '$hosts'}
+>>>>>>> origin/master
+                }
+            }
+
+        ],
+        function (err, user) {
+            if (err) {
+                console.log(err);
+                res.status(500).send({error: err});
+                return next(err);
+            }
+
+            var final = [];
+
+            for (var j in user) {
+                var host = false;
+                var follow = false;
+                for (var j2 in user[j].hosts) {
+                    if (typeof user[j].hosts[j2][0] !== "undefined") {
+                        if (user[j].hosts[j2][0]._id == req.params.userId) {
+                            follow = true;
+
+                        }
+                    }
+                }
+                for (var j2 in user[j].follow) {
+                    if (typeof user[j].follow[j2][0] !== "undefined") {
+                        if (user[j].follow[j2][0]._id == req.params.userId) {
+                            host = true;
+
+                        }
+                    }
+                }
+                user[j]._id.followed = host;
+                user[j]._id.abo = follow;
+
+                final.push(user[j]);
+            }
+            return next({users: final});
+        }
+<<<<<<< HEAD
+    )
+    ;
+=======
+    );
+>>>>>>> origin/master
+
+};
