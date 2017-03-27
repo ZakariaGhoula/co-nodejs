@@ -18,7 +18,7 @@ const localLogin = new LocalStrategy(localOptions, (email, password, done) => {
             return done(err);
         }
         if (!user) {
-            return done(null, false, {error: 'Your login details could not be verified. Please try again.'});
+            return done(null, false, {error: 'Aucun utilisateur sous cette adresse email.'});
         }
 
         user.comparePassword(password, (err, isMatch) => {
@@ -26,7 +26,7 @@ const localLogin = new LocalStrategy(localOptions, (email, password, done) => {
                 return done(err);
             }
             if (!isMatch) {
-                return done(null, false, {error: 'Your login details could not be verified. Please try again.'});
+                return done(null, false, {error: 'Votre mot de passe est erroné.'});
             }
 
 
@@ -39,7 +39,7 @@ const localLogin = new LocalStrategy(localOptions, (email, password, done) => {
                     }
                 }, function (err2, data) {
                     if (err2) {
-                        return res.status(500).json({error: 'Something went wrong, please try later.'});
+                        return done(null, false, ({error: 'Something went wrong, please try later.'}));
                         // req.session.historyData.message = 'Something went wrong, please try later.'
                     }
 
@@ -61,18 +61,46 @@ const jwtOptions = {
 
 // Setting up JWT login strategy
 const jwtLogin = new JwtStrategy(jwtOptions, (payload, done) => {
-    User.findById(payload._id, (err, user) => {
-        if (err) {
-            return done(err, false);
-        }
 
-        if (user) {
-            done(null, user);
-        } else {
-            done(null, false);
-        }
-    });
+    if (typeof payload._doc !== "undefined" && typeof payload._doc._id !== "undefined") {
+        console.log(payload._doc._id);
+        User.findById(payload._doc._id, (err, user) => {
+            if (err) {
+                return done(err, false);
+            }
+
+            if (user) {
+                done(null, user);
+            } else {
+                User.findById(payload._id, (err, user) => {
+                    if (err) {
+                        return done(err, false);
+                    }
+
+                    if (user) {
+                        done(null, user);
+                    } else {
+                        done(null, false);
+                    }
+                });
+            }
+        });
+    } else {
+        User.findById(payload._id, (err, user) => {
+            if (err) {
+                return done(err, false);
+            }
+
+            if (user) {
+                done(null, user);
+            } else {
+                done(null, false);
+            }
+        });
+    }
+
 });
+
 
 passport.use(jwtLogin);
 passport.use(localLogin);

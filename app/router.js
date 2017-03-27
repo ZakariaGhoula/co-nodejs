@@ -5,6 +5,9 @@ const TagController = require('./controllers/tag');
 const NetworkController = require('./controllers/network');
 const RecipeController = require('./controllers/recipes');
 const SearchController = require('./controllers/search');
+
+const NewsfeedController = require('./controllers/newsfeed');
+
 const express = require('express');
 const passport = require('passport');
 const ROLE_USER = require('./constants').ROLE_USER;
@@ -14,8 +17,8 @@ const ROLE_ADMIN = require('./constants').ROLE_ADMIN;
 const passportService = require('./config/passport');
 
 // Middleware to require login/auth
-const requireAuth = passport.authenticate('jwt', { session: false });
-const requireLogin = passport.authenticate('local', { session: false });
+const requireAuth = passport.authenticate('jwt', {session: false});
+const requireLogin = passport.authenticate('local', {session: false});
 
 module.exports = function (app) {
     // Initializing route groups
@@ -26,6 +29,10 @@ module.exports = function (app) {
         seasonalProductRoutes = express.Router(),
         tagRoutes = express.Router(),
         searchRoutes = express.Router(),
+
+        newsfeedRoutes = express.Router(),
+        chatRoutes = express.Router(),
+
         recipeRoutes = express.Router();
 
     //= ========================
@@ -35,8 +42,13 @@ module.exports = function (app) {
     // Set auth routes as subgroup/middleware to apiRoutes
     apiRoutes.use('/auth', authRoutes);
 
+    // refresh route
+    authRoutes.post('/relogin', requireAuth, AuthenticationController.relogin);
+
+
     // Registration route
     authRoutes.post('/register', AuthenticationController.register);
+    authRoutes.post('/facebook', AuthenticationController.facebook);
 
     // Login route
     authRoutes.post('/login', requireLogin, AuthenticationController.login);
@@ -57,11 +69,18 @@ module.exports = function (app) {
     apiRoutes.use('/user', userRoutes);
 
     // View user profile route
+    userRoutes.get('/checkEmail/:email', UserController.emailExist);
+    userRoutes.get('/myprofile', requireAuth, UserController.myProfile);
     userRoutes.get('/:userId', requireAuth, UserController.viewProfile);
     userRoutes.get('/external/:userId', requireAuth, UserController.viewExternalProfile);
 
+
    // userRoutes.get('/thumb/:userId', requireAuth, UserController.thumbImg);
 
+
+    // userRoutes.get('/thumb/:userId', requireAuth, UserController.thumbImg);
+
+    userRoutes.post('/skipform', requireAuth, UserController.updateSkipForm);
     userRoutes.post('/media/update', requireAuth, UserController.updateMedia);
     userRoutes.post('/profile/update', requireAuth, UserController.updateProfile);
     userRoutes.post('/provider/update', requireAuth, UserController.updateProvider);
@@ -73,11 +92,11 @@ module.exports = function (app) {
 
     // Test protected route
     apiRoutes.get('/protected', requireAuth, (req, res) => {
-        res.send({ content: 'The protected test route is functional!' });
+        res.send({content: 'The protected test route is functional!'});
     });
 
     apiRoutes.get('/admins-only', requireAuth, AuthenticationController.roleAuthorization(ROLE_ADMIN), (req, res) => {
-        res.send({ content: 'Admin dashboard is working.' });
+        res.send({content: 'Admin dashboard is working.'});
     });
 
     //
@@ -89,6 +108,22 @@ module.exports = function (app) {
     apiRoutes.use('/recipes', recipeRoutes);
 
     recipeRoutes.get('/traite', requireAuth, RecipeController.getTraitementRecipe);
+
+    recipeRoutes.get('/:userId', requireAuth, RecipeController.getAllRecipesByUserId);
+    recipeRoutes.post('/recipe/delete', requireAuth, RecipeController.deleteRecipe);
+    recipeRoutes.post('/recipe/like/add', requireAuth, RecipeController.addLikeRecipe);
+    recipeRoutes.post('/recipe/like/remove', requireAuth, RecipeController.removeLikeRecipe);
+    recipeRoutes.get('/recipe/like/:userId/:recipeId', requireAuth, RecipeController.retrieveLikeRecipe);
+    recipeRoutes.get('/recipe/liked/:userId', requireAuth, RecipeController.getAllRecipesLikeByUserId);
+    recipeRoutes.post('/recipe/create/new', requireAuth, RecipeController.createNewRecipe);
+    recipeRoutes.post('/recipe/update/title', requireAuth, RecipeController.updateTitleRecipe);
+    recipeRoutes.post('/recipe/update/website', requireAuth, RecipeController.updateWebsiteRecipe);
+    recipeRoutes.post('/recipe/update/ingredient', requireAuth, RecipeController.updateIngredientRecipe);
+    recipeRoutes.post('/recipe/update/media', requireAuth, RecipeController.updateImageRecipe);
+    recipeRoutes.post('/recipe/update/media/delete', requireAuth, RecipeController.deleteImageRecipe);
+    recipeRoutes.post('/recipe/update/media/main-position', requireAuth, RecipeController.positionImageRecipe);
+    recipeRoutes.post('/recipe/update/tags', requireAuth, RecipeController.updateTagsRecipe);
+
    recipeRoutes.get('/:userId', requireAuth, RecipeController.getAllRecipesByUserId);
    recipeRoutes.post('/recipe/delete', requireAuth, RecipeController.deleteRecipe);
    recipeRoutes.post('/recipe/like/add', requireAuth, RecipeController.addLikeRecipe);
@@ -106,6 +141,7 @@ module.exports = function (app) {
    recipeRoutes.post('/recipe/update/statut', requireAuth, RecipeController.updateStatutRecipe);
 
 
+
     recipeRoutes.post('/recipe/create/exist', requireAuth, RecipeController.addFromExistRecipe);
 
     //= ========================
@@ -119,7 +155,7 @@ module.exports = function (app) {
     networkRoutes.post('/follow/add', requireAuth, NetworkController.addFollower);
     networkRoutes.post('/follow/remove', requireAuth, NetworkController.removeFollower);
 
-     //= ========================
+    //= ========================
     // Seasonal product Routes
     //= ========================
 
@@ -128,13 +164,27 @@ module.exports = function (app) {
     seasonalProductRoutes.get('/:lng', requireAuth, SeasonalProductController.getAllSeasonalProducts);
     seasonalProductRoutes.get('/:lng/:season', requireAuth, SeasonalProductController.getSeasonalProducts);
 
-     //= ========================
+
     // search   Routes
     //= ========================
 
     apiRoutes.use('/search', searchRoutes);
 
     searchRoutes.get('/:lng/:userId/:query', requireAuth, SearchController.getSearch);
+
+    //= ========================
+    // newsfedd   Routes
+    //= ========================
+
+    apiRoutes.use('/newsfeed', newsfeedRoutes);
+    newsfeedRoutes.get('/:lng/:userId/:offset/:limit', requireAuth, NewsfeedController.getMyNewsfeeds);
+    newsfeedRoutes.get('/slider/:lng/:userId', requireAuth, NewsfeedController.getSliderExplorer);
+    newsfeedRoutes.get('/explorer/:lng/:userId/:offset/:limit', requireAuth, NewsfeedController.getNewsfeedsExplorer);
+
+
+
+    searchRoutes.get('/:lng/:userId/:query', requireAuth, SearchController.getSearch);
+
 
 
     // = ========================
@@ -147,9 +197,6 @@ module.exports = function (app) {
     tagRoutes.get('/suggest/:lng', requireAuth, TagController.getAllTagsSuggest);
     tagRoutes.get('/autocomplete/list/:lng', requireAuth, TagController.getAllTagsForListAutoComplete);
     tagRoutes.get('/autocomplete/:lng/:name', requireAuth, TagController.getAllTagsAutoComplete);
-
-
-
 
 
     // Set url for API group routes
